@@ -1,9 +1,5 @@
 # Functional Requirements
 
-Source spec: `/home/dell/Downloads/customer_payment_reconciliation_agent_dark.pdf`
-
-Source version: 1.1, dated 21 May 2026
-
 ## Project Purpose
 
 The Customer Payment Reconciliation Agent checks whether the amount agreed with a customer during a call matches the amount actually paid. It is meant for finance, operations, support, and sales teams that need a clearer and more auditable reconciliation process.

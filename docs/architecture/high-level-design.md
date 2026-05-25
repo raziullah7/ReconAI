@@ -1,9 +1,5 @@
 # High-Level Design
 
-Source spec: `/home/dell/Downloads/customer_payment_reconciliation_agent_dark.pdf`
-
-Source version: 1.1, dated 21 May 2026
-
 ## Architecture Pattern
 
 The system follows an event-driven pipeline with deterministic reconciliation and a human review queue.

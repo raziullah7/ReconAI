@@ -1,9 +1,5 @@
 # ReconAI Implementation Plan
 
-Source spec: `/home/dell/Downloads/customer_payment_reconciliation_agent_dark.pdf`
-
-Source version: 1.1, dated 21 May 2026
-
 ## Purpose
 
 ReconAI is a customer payment reconciliation app. It compares what a
@@ -443,8 +439,8 @@ These items are intentionally not part of the first baseline:
 
 The `.agents` folder contains a heavier SaaS-oriented planning system with
 PRD, BDD, architecture, specification, phase, review, and coding agents. That
-structure may be useful later, but it is heavier than ReconAI needs at this
-initial planning stage.
+structure may be useful later, but it is heavier than ReconAI needs for the
+core documentation set.
 
 For this project, `docs/PLAN.md` is the main roadmap. Future phase documents
 can be created only when we are ready to expand a specific phase into detailed

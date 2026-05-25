@@ -1,9 +1,5 @@
 # Scope
 
-Source spec: `/home/dell/Downloads/customer_payment_reconciliation_agent_dark.pdf`
-
-Source version: 1.1, dated 21 May 2026
-
 ## Current Goal
 
 Build a first version of a customer payment reconciliation system that can compare what was agreed in a customer call with what was actually paid.
