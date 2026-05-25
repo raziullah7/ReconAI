@@ -10,7 +10,7 @@ async def health(
 ) -> dict[str, str]:
     """Return readiness metadata for the app shell.
 
-    What: Reports a small health payload for local probes and the frontend.
+    What: Reports a small health payload for local probes and future clients.
     Why: Phase 1 needs a stable integration point before domain APIs ship.
 
     Args:

@@ -145,6 +145,26 @@ Include verbatim in every PLAN document:
 - Use `comment` skill for change summaries and `commit-message`
   skill for commits after each phase.
 
+
+## Learning-Friendly Planning Mode
+
+Use this mode whenever the user asks to go slowly, keep the project
+minimal, make the work easier to understand, or avoid overloading a
+phase:
+
+- Prefer one subsystem per phase. Split backend shell, frontend shell,
+  database tooling, Redis, workers, local AI, and deployment into separate
+  phases.
+- For scaffold phases, prefer roughly 50-200 production LOC and 1-3 focused
+  tests per subsystem over the normal 300-500 LOC target.
+- Add runtime services only when the current phase ships behavior that uses
+  them.
+- Every phase should state exactly what the user can run afterward.
+- Future infrastructure should be documented as deferred, not implemented as
+  a placeholder.
+- Documentation should distinguish target design from current implementation
+  status.
+
 ## Phase Sizing Heuristics
 
 Phase sizing must be bottom-up, not vibe-checked. These tables

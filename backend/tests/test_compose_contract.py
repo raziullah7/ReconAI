@@ -3,37 +3,30 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
 
-def test_compose_declares_foundation_services() -> None:
-    """Verifies that compose declares the services Phase 1 promises.
+def test_compose_declares_database_only() -> None:
+    """Verifies that Compose only declares the Phase 1 database service.
 
     Assertions:
-        - `postgres`, `redis`, `ollama`, `backend`, `frontend`, and
-          `worker` services are present.
-        - Stateful services use named volumes so local data is not tied to
-          a container ID.
-        - Worker service starts as a placeholder and does not run domain
-          processing yet.
+        - `postgres` is present for local database development.
+        - Redis, Ollama, backend, frontend, and worker containers are
+          deferred until their own phases.
+        - PostgreSQL uses a named volume so local data is not tied to a
+          container ID.
     """
     compose_text = (ROOT_DIR / "compose.yml").read_text(encoding="utf-8")
 
-    for service_name in (
-        "postgres",
+    assert "  postgres:" in compose_text
+
+    for deferred_service in (
         "redis",
         "ollama",
         "backend",
         "frontend",
         "worker",
     ):
-        assert f"  {service_name}:" in compose_text
+        assert f"  {deferred_service}:" not in compose_text
 
-    for volume_name in (
-        "postgres-data:",
-        "redis-data:",
-        "ollama-data:",
-        "storage-data:",
-    ):
-        assert volume_name in compose_text
-
-    assert "python -m app.worker" in compose_text
-    assert "RECONAI_PROCESSING_ENABLED=false" in compose_text
-    assert "celery" not in compose_text.lower()
+    assert "postgres-data:" in compose_text
+    assert "redis-data:" not in compose_text
+    assert "ollama-data:" not in compose_text
+    assert "storage-data:" not in compose_text

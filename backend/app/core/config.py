@@ -5,12 +5,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Stores runtime settings required by the Phase 1 app shell.
+    """Store runtime settings required by the local app shell.
 
-    What: Validates infrastructure URLs, feature-flag defaults, storage
-        location, and local runtime endpoints from environment variables.
-    Why: The app must fail fast when required local dependencies are not
-        configured, before later phases add domain behavior.
+    What: Validates the one infrastructure URL required by the current
+        foundation: PostgreSQL.
+    Why: Redis, Ollama, storage, and workers are deferred until their own
+        phases, so the backend should not require those services to boot.
 
     States / Side Effects:
         Reads environment variables using the configured settings source.
@@ -27,32 +27,6 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
         validate_default=True,
     )
-    redis_url: str = Field(
-        default="",
-        alias="REDIS_URL",
-        validate_default=True,
-    )
-    ollama_base_url: str = Field(
-        default="http://ollama:11434",
-        alias="OLLAMA_BASE_URL",
-    )
-    storage_root: str = Field(
-        default="/var/lib/reconai/storage",
-        alias="STORAGE_ROOT",
-    )
-    reconai_processing_enabled: bool = Field(
-        default=False,
-        alias="RECONAI_PROCESSING_ENABLED",
-    )
-    reconai_notifications_enabled: bool = Field(
-        default=False,
-        alias="RECONAI_NOTIFICATIONS_ENABLED",
-    )
-    reconai_exports_enabled: bool = Field(
-        default=False,
-        alias="RECONAI_EXPORTS_ENABLED",
-    )
-    worker_concurrency: int = Field(default=1, ge=1, alias="WORKER_CONCURRENCY")
     service_name: str = "reconai-backend"
     app_version: str = "0.1.0"
 
@@ -62,15 +36,6 @@ class Settings(BaseSettings):
         """Validate that the configured database URL targets PostgreSQL."""
         if not value.startswith("postgresql"):
             msg = "DATABASE_URL must use a postgresql scheme"
-            raise ValueError(msg)
-        return value
-
-    @field_validator("redis_url")
-    @classmethod
-    def validate_redis_url(cls, value: str) -> str:
-        """Validate that the configured cache URL targets Redis."""
-        if not value.startswith("redis"):
-            msg = "REDIS_URL must use a redis scheme"
             raise ValueError(msg)
         return value
 

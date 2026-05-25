@@ -1,143 +1,82 @@
 # CONFIG.md
 
-**Feature**: customer_payment_reconciliation_agent  
-**Stage**: spec  
-**Last updated**: intentionally omitted  
-**Owner**: config-designer subagent pattern
+> Status: This document separates current required settings from future target
+> settings. A setting listed as deferred should not be required by the app yet.
 
-See [PRD.md](PRD.md) for product constraints, [ARCH.md](ARCH.md) for architecture context, and [SPEC.md](SPEC.md) for implementation decisions.
-
-## Override Precedence
-
-Runtime configuration resolves in this order: environment variable, tenant override when allowed, tenant tier policy when implemented, then application default. Tenant overrides are disabled for secrets and core security settings.
-
-## Feature Flags
-
-### RECONAI_PROCESSING_ENABLED
-**Type**: feature-flag  
-**Purpose**: Enables or disables asynchronous processing for transcription, extraction, matching, and reconciliation.
-
-**Default**: enabled in development and staging; enabled in production after health checks.  
-**Validation**: boolean.  
-**Runtime**: hot-reload.  
-**Rollout strategy**: allowlist or all-tenants.  
-**Kill switch**: yes, disables new processing jobs while preserving reads.  
-**Tenant override**: allowed.  
-**Flag dependencies**: requires queue, database, transcription, and LLM settings.  
-**Observability**: emit `reconai.flag.processing_enabled`.  
-**Deprecation plan**: remove only after processing is permanently core.
-
-### RECONAI_NOTIFICATIONS_ENABLED
-**Type**: feature-flag  
-**Purpose**: Controls optional mismatch and payment-not-found notifications.
-
-**Default**: disabled.  
-**Validation**: boolean.  
-**Runtime**: hot-reload.  
-**Rollout strategy**: tenant allowlist if notifications enter scope.  
-**Kill switch**: yes.  
-**Tenant override**: allowed.  
-**Flag dependencies**: notification provider settings when implemented.  
-**Observability**: emit `reconai.flag.notifications_enabled`.  
-**Deprecation plan**: keep while notifications are optional.
-
-### RECONAI_EXPORTS_ENABLED
-**Type**: feature-flag  
-**Purpose**: Controls CSV/Excel export availability.
-
-**Default**: enabled.  
-**Validation**: boolean.  
-**Runtime**: hot-reload.  
-**Rollout strategy**: all-tenants.  
-**Kill switch**: yes, hides export actions and rejects export API requests.  
-**Tenant override**: allowed.  
-**Flag dependencies**: none.  
-**Observability**: emit `reconai.flag.exports_enabled`.  
-**Deprecation plan**: remove if exports become mandatory.
-
-## Environment Variables
+## Current Required Configuration
 
 ### DATABASE_URL
-**Type**: env-var  
-**Purpose**: PostgreSQL connection string.
 
-**Default**: development compose database; staging/production from secret store.  
-**Validation**: must be a PostgreSQL URL.  
-**Runtime**: restart-required.  
-**Tenant override**: not allowed.  
-**Secret rotation**: rotate via secret store and restart services.
+Type: environment variable.
 
-### REDIS_URL
-**Type**: env-var  
-**Purpose**: Redis broker and result backend URL.
+Purpose: PostgreSQL connection string for the local backend.
 
-**Default**: development compose Redis; staging/production from environment.  
-**Validation**: must be a Redis URL.  
-**Runtime**: restart-required.  
-**Tenant override**: not allowed.  
-**Secret rotation**: rotate credentials if Redis requires auth.
+Current default for local development:
 
-### OLLAMA_BASE_URL
-**Type**: env-var  
-**Purpose**: Base URL for local Ollama runtime.
+```bash
+DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai
+```
 
-**Default**: local compose service URL.  
-**Validation**: valid HTTP URL reachable by workers.  
-**Runtime**: restart-required for workers.  
-**Tenant override**: not allowed.  
-**Secret rotation**: not a secret.
+Validation: must use a PostgreSQL scheme.
 
-### RECONAI_LLM_MODEL
-**Type**: env-var  
-**Purpose**: Local LLM model used for agreement extraction.
+Runtime: restart the backend after changing it.
 
-**Default**: primary small local model selected during deployment.  
-**Validation**: non-empty model name installed in Ollama.  
-**Runtime**: restart-required for workers unless model reload is implemented.  
-**Tenant override**: not allowed for first delivery.  
-**Secret rotation**: not a secret.
+Tenant override: not allowed.
 
-### TRANSCRIPTION_BACKEND
-**Type**: env-var  
-**Purpose**: Selects faster-whisper or whisper.cpp adapter.
+## Current Local Commands
 
-**Default**: faster-whisper.  
-**Validation**: one of `faster_whisper` or `whisper_cpp`.  
-**Runtime**: restart-required for workers.  
-**Tenant override**: not allowed.  
-**Secret rotation**: not a secret.
+Start the database from the repo root:
 
-### STORAGE_ROOT
-**Type**: env-var  
-**Purpose**: Local storage root or object-storage prefix for call recordings and exports.
+```bash
+docker compose up -d postgres
+```
 
-**Default**: local compose volume.  
-**Validation**: writable path or configured object-storage URI.  
-**Runtime**: restart-required.  
-**Tenant override**: not allowed.  
-**Secret rotation**: not a secret unless object storage credentials are embedded, which is prohibited.
+Start the backend from `backend/`:
+
+```bash
+uv sync
+DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
+```
+
+## Planned Milestone 1 Configuration
 
 ### EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD
-**Type**: runtime-option  
-**Purpose**: Confidence below this threshold routes extraction to human review.
 
-**Default**: deployment policy value; exact numeric value must be confirmed before implementation.  
-**Validation**: decimal between 0 and 1.  
-**Runtime**: hot-reload.  
-**Tenant override**: allowed if operations approves.  
-**Secret rotation**: not a secret.
+Type: environment variable.
 
-### WORKER_CONCURRENCY
-**Type**: env-var  
-**Purpose**: Celery worker concurrency for local resource control.
+Purpose: numeric threshold for routing low-confidence agreement extractions to
+`NEEDS_REVIEW` during Base API decision-making.
 
-**Default**: 1 for transcription/extraction workers.  
-**Validation**: positive integer; local AI workers should remain conservative.  
-**Runtime**: restart-required.  
-**Tenant override**: not allowed.  
-**Secret rotation**: not a secret.
+Current status: not required by the Phase 1 foundation app. M1.1 must select the
+value, or remove threshold-based review routing from the Base API rules, before
+M1.3 validation and reconciliation code starts.
+
+Runtime: restart the backend after changing it once the Base API phase
+introduces this setting.
+
+Tenant override: deferred until tenant context exists.
+
+## Deferred Configuration
+
+These settings are part of the target product, but they should not be required
+in the current foundation phase.
+
+| Setting | Introduced In | Reason It Is Deferred |
+| --- | --- | --- |
+| `REDIS_URL` | Redis and queue foundation phase | No queue or worker behavior exists yet. |
+| `OLLAMA_BASE_URL` | Local AI boundary phase | No local LLM adapter exists yet. |
+| `RECONAI_LLM_MODEL` | Local AI boundary phase | Model choice is still gated. |
+| `TRANSCRIPTION_BACKEND` | Local AI boundary phase | Transcription adapter is not implemented yet. |
+| `STORAGE_ROOT` | Call intake or storage phase | No recording/export storage path exists yet. |
+| `WORKER_CONCURRENCY` | Worker runtime phase | No worker process exists yet. |
+| `RECONAI_PROCESSING_ENABLED` | Worker runtime phase | There is no processing pipeline yet. |
+| `RECONAI_NOTIFICATIONS_ENABLED` | Notification phase, if kept in scope | Notifications are not in the early build. |
+| `RECONAI_EXPORTS_ENABLED` | Dashboard/export phase | Exports are not implemented yet. |
+| `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD` | Base API validation/decision phase | Gate A must choose the value before validation code starts; it is not required by Phase 1. |
 
 ## Open Questions
 
-- OQ-CONFIG-01: Confirm `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD` before implementation.
-- OQ-CONFIG-02: Confirm exact LLM model name installed on the target server.
+- Confirm the extraction confidence threshold before implementing Base API
+  validation and later local AI review routing.
+- Confirm the local LLM model before adding Ollama or worker sizing docs.
+- Confirm CSV import columns before payment import is planned.

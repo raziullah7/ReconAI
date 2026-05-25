@@ -1,5 +1,8 @@
 # UI_UX.md
 
+> Status: This is a target design document. It does not mean every item is implemented today. Use [README.md](README.md) and [PLAN.md](PLAN.md) for the current implementation phase.
+
+
 ## User Journeys
 
 - Finance intake: choose tenant, select/create customer, upload recording or submit transcript, see processing status.

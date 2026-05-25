@@ -9,7 +9,6 @@ from app.main import create_app
 def client() -> TestClient:
     settings = Settings(
         database_url="postgresql://reconai:reconai@localhost:5432/reconai",
-        redis_url="redis://localhost:6379/0",
     )
     return TestClient(create_app(settings))
 

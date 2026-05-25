@@ -180,6 +180,24 @@ If a parent-declared item is blocked by a missing canonical-owner fact
 or a later-phase dependency, surface it as a clarification gap; do not
 preserve it as a skipped placeholder.
 
+## Learning-Friendly Scope Budget
+
+When the parent PLAN or user asks for slow, beginner-friendly phases, the
+phase plan must stay small enough to understand in one sitting:
+
+- Expand exactly one subsystem. Do not combine backend, frontend, database,
+  worker, AI, and deployment work unless the parent phase explicitly says so.
+- Include at most one new runtime service and only when the current phase
+  ships behavior that uses it.
+- Keep scaffold phases to a short file list and 1-3 focused tests per
+  subsystem.
+- Include a `What You Can Run After This Phase` section with exact commands.
+- Do not create seed scripts, reset scripts, browser scripts, backend
+  integration scripts, placeholder CLIs, or no-op worker files unless the
+  parent phase explicitly names them as current deliverables.
+- Mark future needs as `Deferred` rather than adding empty directories,
+  placeholder services, or skipped tests.
+
 ## Document Ownership
 
 This agent owns:

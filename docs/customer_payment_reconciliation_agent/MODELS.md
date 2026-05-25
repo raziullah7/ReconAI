@@ -1,5 +1,8 @@
 # MODELS.md
 
+> Status: This is a target design document. It does not mean every item is implemented today. Use [README.md](README.md) and [PLAN.md](PLAN.md) for the current implementation phase.
+
+
 **Feature**: customer_payment_reconciliation_agent  
 **Stage**: spec  
 **Last updated**: intentionally omitted  
@@ -15,6 +18,75 @@ See [PRD.md](PRD.md) for product requirements and [ARCH.md](ARCH.md) for archite
 - Reconciliation cases can link to multiple payments through `ReconciliationCasePayment`.
 - Mutable records include audit columns and optimistic versioning.
 - PII fields are tagged and require encryption at rest.
+
+## Base API Persistence Model
+
+Milestone 1 stores reconciliation cases without tenant/auth/customer/payment
+foreign keys so the backend can prove the core loop first. These fields are the
+minimum persistence contract for the Base API; the target entities below remain
+the long-term normalized model.
+
+### Table: `reconciliation_cases` (Milestone 1 subset)
+
+```typescript
+interface BaseReconciliationCase {
+  id: string;
+  externalReference: string | null;
+  customerReference: string | null;
+  sourceText: string | null;
+  extractionSnapshotJson: string;
+  actualPaymentSnapshotJson: string | null;
+  agreedAmountMinor: number | null;
+  paidAmountMinor: number | null;
+  differenceMinor: number | null;
+  currency: string | null;
+  status: 'RECONCILED' | 'UNDERPAID' | 'OVERPAID' | 'PARTIAL_PAYMENT' | 'PAYMENT_NOT_FOUND' | 'NEEDS_REVIEW' | 'FAILED';
+  reason: string;
+  needsHumanReview: boolean;
+  confidence: number;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+// Indexes: idx_base_cases_created [createdAt]; idx_base_cases_status [status].
+// Constraints: confidence between 0 and 1; differenceMinor equals paidAmountMinor minus agreedAmountMinor when both values exist.
+```
+
+### Snapshot: `AgreementExtractionInputV1`
+
+The extraction snapshot is stored exactly as accepted by [API.md](API.md). It is
+LLM-shaped even when produced by a fixture or test. Validated fields drive
+business logic; `raw_llm_output` is audit/debug data only.
+
+Required persisted fields:
+
+- `schema_version`
+- `agreed_amount_minor`
+- `currency`
+- `payment_type`
+- `due_date`
+- `is_final_amount`
+- `evidence_text`
+- `confidence`
+- `needs_human_review`
+- optional `model_name`
+- optional `raw_llm_output`
+
+### Snapshot: `ActualPaymentInputV1`
+
+The actual payment snapshot represents the payment evidence submitted to the
+Base API before a payment ledger exists.
+
+Required persisted fields:
+
+- `paid_amount_minor`
+- `currency`
+- optional `payment_date`
+- optional `reference`
+- optional `payment_method`
+
+Later milestones can split these snapshots into normalized `AgreementExtraction`
+and `Payment` tables after the Base API is stable and reviewed.
 
 ## Entity: Tenant
 

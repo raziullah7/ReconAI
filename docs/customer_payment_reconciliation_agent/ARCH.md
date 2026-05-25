@@ -52,7 +52,7 @@ Users
   -> object/local storage for recordings
 ```
 
-The core system is a monorepo with `frontend/`, `backend/`, and `docs/`. The current repo has placeholder app folders, so implementation should create the runtime structure during later phases.
+The target system is a monorepo with `frontend/`, `backend/`, and `docs/`. The current implementation is backend-first: `backend/` has the FastAPI shell, `frontend/` only records that UI setup is deferred, and later phases should add runtime structure only when needed.
 
 ## 5. High-Level Design
 
