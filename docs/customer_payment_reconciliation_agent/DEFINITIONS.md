@@ -1,0 +1,91 @@
+# DEFINITIONS.md
+
+This file owns typed interfaces and function/class contracts. API payloads live in [API.md](API.md); data schemas live in [MODELS.md](MODELS.md).
+
+## Ambient Context Types
+
+- `TenantContext` (object): carries `tenantId`, `tenantStatus`, `locale`, and `currencyDefault`; layer: imperative shell.
+- `UserContext` (object): carries `userId`, `tenantId`, `role`, and `permissions`; layer: imperative shell.
+- `RequestContext` (object): carries `tenant`, `user`, `requestId`, and optional `idempotencyKey`; layer: imperative shell.
+- `AuthzChecker` (class): `require(permission: Permission, ctx: RequestContext) -> Result[None, AuthzError]`; layer: imperative shell.
+- `Clock` (object): `now() -> datetime`; layer: injected dependency.
+- `Logger` (object): structured logging port; layer: imperative shell.
+- `Tracer` (object): trace-span port; layer: imperative shell.
+
+## Port Interfaces
+
+- `CustomerRepository` (class): tenant-scoped customer persistence.
+  - `create(ctx: RequestContext, input: CustomerCreate) -> Result[Customer, DomainError]`
+  - `list(ctx: RequestContext, query: CustomerQuery) -> Result[Page[Customer], DomainError]`
+
+- `IdempotencyRepository` (class): reserves, completes, replays, and expires API idempotency records.
+  - `reserve(ctx: RequestContext, endpoint: str, method: HttpMethod, key: str, request_hash: str) -> Result[IdempotencyReservation, DomainError]`
+  - `complete(ctx: RequestContext, reservation_id: IdempotencyRecordId, response: StoredResponse) -> Result[IdempotencyRecord, DomainError]`
+  - `replay(ctx: RequestContext, endpoint: str, key: str, request_hash: str) -> Result[StoredResponse, DomainError]`
+
+- `CallRepository` (class): call record and transcript persistence.
+  - `create_call(ctx: RequestContext, input: CallCreate) -> Result[CallRecord, DomainError]`
+  - `save_transcript(ctx: RequestContext, call_id: CallId, transcript: TranscriptCreate) -> Result[CallTranscript, DomainError]`
+  - `update_status(ctx: RequestContext, call_id: CallId, expected: CallStatus, next: CallStatus) -> Result[CallRecord, DomainError]`
+
+- `PaymentRepository` (class): payment persistence and candidate search.
+  - `create(ctx: RequestContext, input: PaymentCreate) -> Result[Payment, DomainError]`
+  - `search_candidates(ctx: RequestContext, criteria: PaymentMatchCriteria) -> Result[list[Payment], DomainError]`
+
+- `ExtractionRepository` (class): agreement extraction persistence.
+  - `save(ctx: RequestContext, input: AgreementExtractionCreate) -> Result[AgreementExtraction, DomainError]`
+  - `get_current_for_call(ctx: RequestContext, call_id: CallId) -> Result[AgreementExtraction, DomainError]`
+
+- `ReconciliationRepository` (class): case and case-payment persistence.
+  - `create_or_update(ctx: RequestContext, decision: ReconciliationDecision) -> Result[ReconciliationCase, DomainError]`
+  - `link_payment(ctx: RequestContext, case_id: CaseId, payment_id: PaymentId, amount_applied_minor: int) -> Result[ReconciliationCase, DomainError]`
+
+- `AuditLogRepository` (class): append-only audit persistence.
+  - `append(ctx: RequestContext, entry: AuditEntryCreate) -> Result[AuditLog, DomainError]`
+
+- `JobQueue` (class): asynchronous job handoff.
+  - `enqueue(ctx: RequestContext, job: ProcessingJob) -> Result[ProcessingAttempt, DomainError]`
+
+- `TranscriptionAdapter` (class): local transcription runtime port.
+  - `transcribe(recording_uri: str) -> Result[TranscriptDraft, ProcessingError]`
+
+- `TranscriptionService` (class): coordinates audio transcription, transcript persistence, status transitions, and extraction handoff.
+  - `transcribe_call(ctx: RequestContext, call_id: CallId, attempt_id: ProcessingAttemptId) -> Result[CallTranscript, DomainError]`
+  - `submit_transcript(ctx: RequestContext, call_id: CallId, transcript: TranscriptDraft) -> Result[CallTranscript, DomainError]`
+
+- `LocalLlmAdapter` (class): local LLM extraction runtime port.
+  - `extract_agreement(transcript: str, prompt: ExtractionPrompt) -> Result[RawExtraction, ProcessingError]`
+
+## Domain Functions
+
+- `validate_extraction(raw: RawExtraction, threshold: float) -> Result[ValidatedExtraction, ExtractionValidationError]`
+  - Layer: functional core.
+  - Dependencies injected: none.
+  - Returns validated agreement fields or typed validation errors.
+
+- `match_candidate_payments(criteria: PaymentMatchCriteria, payments: list[Payment]) -> MatchResult`
+  - Layer: functional core.
+  - Dependencies injected: none.
+  - Applies customer, phone, invoice, currency, date range, and amount signals.
+
+- `decide_reconciliation(extraction: ValidatedExtraction, match_result: MatchResult) -> ReconciliationDecision`
+  - Layer: functional core.
+  - Dependencies injected: none.
+  - Applies PRD reconciliation rules in deterministic order.
+
+- `recalculate_case_after_review(case: ReconciliationCase, linked_payments: list[Payment], action: ReviewAction) -> ReconciliationDecision`
+  - Layer: functional core.
+  - Dependencies injected: none.
+  - Recomputes paid amount, difference, status, and reason after manual action.
+
+## Application Services
+
+- `IntakeService` (class): creates call records, stores recordings, writes audit entries, and enqueues processing.
+- `ProcessingService` (class): coordinates worker status, idempotency, and retry-safe state transitions.
+- `ExtractionService` (class): orchestrates local LLM calls and validation.
+- `PaymentService` (class): handles manual payments and CSV imports.
+- `ReconciliationService` (class): runs matching and deterministic decisions.
+- `ReviewService` (class): applies review actions with optimistic locking and audit logging.
+- `ReportingService` (class): provides dashboard, filters, and exports.
+
+Every service method receives `RequestContext` or a worker equivalent containing tenant context, request/job ID, logger, tracer, and idempotency key for mutations.
