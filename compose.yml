@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: reconai
+      POSTGRES_USER: reconai
+      POSTGRES_PASSWORD: reconai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+  backend:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    working_dir: /workspace/backend
+    env_file:
+      - .env
+    environment:
+      - RECONAI_PROCESSING_ENABLED=false
+    command: uv run fastapi dev --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/workspace
+      - storage-data:/var/lib/reconai/storage
+    depends_on:
+      - postgres
+      - redis
+      - ollama
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /workspace/frontend
+    command: sh -c "npm install --no-package-lock && npm run dev"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/workspace
+    depends_on:
+      - backend
+
+  worker:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    working_dir: /workspace/backend
+    env_file:
+      - .env
+    environment:
+      - RECONAI_PROCESSING_ENABLED=false
+    command: uv run python -m app.worker
+    volumes:
+      - .:/workspace
+      - storage-data:/var/lib/reconai/storage
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres-data:
+  redis-data:
+  ollama-data:
+  storage-data:
