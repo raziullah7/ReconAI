@@ -16,25 +16,33 @@ Assumptions:
 - The current backend has no Alembic, ORM model, DB session, or repository.
 - Milestone 1 remains non-tenantized.
 
-P_bottom_up: about 390 production LOC.
-T_bottom_up: about 260 test LOC.
+P_bottom_up: about 470 production LOC.
+T_bottom_up: about 330 test LOC.
 
 ## Execution Plan
 
 ### Red
 
-- `test_database_session_uses_settings_database_url`
-  - Summary: Verifies the session factory uses `Settings.database_url` and does
-    not require Redis, Ollama, worker, tenant, or auth settings.
-  - Mocks: A test `Settings` object with the local PostgreSQL URL.
-  - Assertions: Engine/session creation succeeds and uses the configured URL.
+- `test_database_engine_uses_settings_database_url`
+  - Summary: Verifies the engine helper accepts `Settings.database_url` using
+    the explicit psycopg SQLAlchemy URL and does not require Redis, Ollama,
+    worker, tenant, or auth settings.
+  - Mocks: A test `Settings` object with
+    `postgresql+psycopg://reconai:reconai@localhost:5432/reconai`.
+  - Assertions: Engine creation succeeds, the dialect driver is `psycopg`, and
+    the configured URL is preserved.
 
 - `test_reconciliation_case_migration_creates_table`
   - Summary: Verifies Alembic upgrades create `reconciliation_cases` with the
     Base API storage columns from [../MODELS.md](../MODELS.md).
-  - Mocks: A disposable test database/schema when available.
-  - Assertions: The table, status index, created timestamp index, and JSON
-    snapshot columns exist after upgrade.
+  - Mocks: A disposable PostgreSQL database or schema with isolated Alembic
+    version state; the test must fail fast when PostgreSQL is unavailable
+    instead of silently falling back to SQLite.
+  - Assertions: Every Base API column exists using snake_case names, the status
+    and created timestamp indexes exist, JSON snapshot columns exist, there is
+    no tenant column, status values are constrained, confidence is constrained
+    to 0..1, and `difference_minor` equals `paid_amount_minor -
+    agreed_amount_minor` when both amounts exist.
 
 - `test_reconciliation_case_repository_create_list_get_round_trip`
   - Summary: Verifies the repository can create one case, list newest-first, and
@@ -48,14 +56,100 @@ T_bottom_up: about 260 test LOC.
 
 - Add dependencies in [../../../backend/pyproject.toml](../../../backend/pyproject.toml):
   `sqlalchemy>=2.0`, `alembic>=1.17`, and `psycopg[binary]>=3.2`.
+- Update local database URL examples to use the psycopg 3 SQLAlchemy dialect:
+  `postgresql+psycopg://reconai:reconai@localhost:5432/reconai`.
 - Add database package files under `backend/app/db/`.
 - Add SQLAlchemy model and repository under
   `backend/app/features/reconciliation/`.
 - Add Alembic config and first migration under `backend/migrations/`.
+- Add minimal typed persistence contracts under
+  `backend/app/features/reconciliation/contracts.py`.
+
+Database schema requirements:
+
+- Table name: `reconciliation_cases`.
+- Columns: `id`, `external_reference`, `customer_reference`, `source_text`,
+  `extraction_snapshot_json`, `actual_payment_snapshot_json`,
+  `agreed_amount_minor`, `paid_amount_minor`, `difference_minor`, `currency`,
+  `status`, `reason`, `needs_human_review`, `confidence`, `version`,
+  `created_at`, and `updated_at`.
+- Indexes: `idx_base_cases_created` on `created_at` and
+  `idx_base_cases_status` on `status`.
+- Constraints: no tenant column; `confidence` is between 0 and 1; `status` is
+  limited to `RECONCILED`, `UNDERPAID`, `OVERPAID`, `PARTIAL_PAYMENT`,
+  `PAYMENT_NOT_FOUND`, `NEEDS_REVIEW`, and `FAILED`; `difference_minor` equals
+  `paid_amount_minor - agreed_amount_minor` when both amount columns exist.
 
 Required signatures:
 
 ```python
+from dataclasses import dataclass
+from datetime import datetime
+from enum import StrEnum
+from typing import Mapping
+from uuid import UUID
+
+
+class ReconciliationStatus(StrEnum):
+    """Status values persisted by the Base API repository."""
+
+    RECONCILED = "RECONCILED"
+    UNDERPAID = "UNDERPAID"
+    OVERPAID = "OVERPAID"
+    PARTIAL_PAYMENT = "PARTIAL_PAYMENT"
+    PAYMENT_NOT_FOUND = "PAYMENT_NOT_FOUND"
+    NEEDS_REVIEW = "NEEDS_REVIEW"
+    FAILED = "FAILED"
+
+
+@dataclass(frozen=True, slots=True)
+class ReconciliationCaseCreateV1:
+    """Carry snapshots and optional references into persistence."""
+
+    external_reference: str | None
+    customer_reference: str | None
+    source_text: str | None
+    extraction_snapshot: Mapping[str, object]
+    actual_payment_snapshot: Mapping[str, object] | None
+
+
+@dataclass(frozen=True, slots=True)
+class ReconciliationDecisionV1:
+    """Carry computed decision fields into persistence."""
+
+    status: ReconciliationStatus
+    agreed_amount_minor: int | None
+    paid_amount_minor: int | None
+    difference_minor: int | None
+    currency: str | None
+    reason: str
+    needs_human_review: bool
+    confidence: float
+
+
+@dataclass(frozen=True, slots=True)
+class BaseReconciliationCase:
+    """Projection returned by the Base API repository."""
+
+    id: UUID
+    external_reference: str | None
+    customer_reference: str | None
+    source_text: str | None
+    extraction_snapshot: Mapping[str, object]
+    actual_payment_snapshot: Mapping[str, object] | None
+    agreed_amount_minor: int | None
+    paid_amount_minor: int | None
+    difference_minor: int | None
+    currency: str | None
+    status: ReconciliationStatus
+    reason: str
+    needs_human_review: bool
+    confidence: float
+    version: int
+    created_at: datetime
+    updated_at: datetime
+
+
 def get_engine(database_url: str) -> Engine:
     """Create the SQLAlchemy engine for local PostgreSQL access.
 
@@ -89,7 +183,9 @@ def get_session_factory(engine: Engine) -> sessionmaker[Session]:
 def get_session() -> Iterator[Session]:
     """Yield one request-scoped database session.
 
-    What: Opens, yields, and closes a SQLAlchemy session.
+    What: Loads settings, creates or reuses the cached engine/session factory,
+        then opens, yields, commits, rolls back on error, and closes one
+        SQLAlchemy session.
     Why: Later API routes need a FastAPI dependency with predictable cleanup.
 
     Yields:
@@ -98,6 +194,72 @@ def get_session() -> Iterator[Session]:
     States / Side Effects:
         Opens and closes a database connection.
     """
+
+
+class BaseReconciliationCaseRepository:
+    """Persist and read Base API reconciliation cases."""
+
+    def __init__(self, session: Session) -> None:
+        """Store the injected SQLAlchemy session used by repository methods."""
+
+    def create(
+        self,
+        input: ReconciliationCaseCreateV1,
+        decision: ReconciliationDecisionV1,
+    ) -> BaseReconciliationCase:
+        """Persist one case from snapshots and a backend-owned decision.
+
+        What: Inserts one `reconciliation_cases` row, flushes generated
+            identifiers and timestamps, and maps the row back to a projection.
+        Why: Later service and API phases need persistence that does not own
+            validation or decision logic.
+
+        Args:
+            input: Original request snapshots and optional references.
+            decision: Backend-owned reconciliation outcome to store.
+
+        Returns:
+            BaseReconciliationCase: Stored case projection.
+
+        States / Side Effects:
+            Adds and flushes a SQLAlchemy model in the injected session.
+        """
+
+    def list(
+        self,
+        status: ReconciliationStatus | None,
+        limit: int,
+        offset: int,
+    ) -> list[BaseReconciliationCase]:
+        """Return stored cases in newest-first order.
+
+        What: Reads stored cases, optionally filters by status, and applies
+            limit/offset pagination.
+        Why: M1.4 list endpoints need a repository query that remains local
+            and non-tenantized for Milestone 1.
+
+        Args:
+            status: Optional reconciliation status filter.
+            limit: Maximum number of cases to return.
+            offset: Number of newest-first rows to skip.
+
+        Returns:
+            list[BaseReconciliationCase]: Matching stored case projections.
+        """
+
+    def get(self, case_id: UUID) -> BaseReconciliationCase | None:
+        """Return one stored case by ID or None when it does not exist.
+
+        What: Loads a single case by primary key and maps it to the repository
+            projection when present.
+        Why: M1.4 detail endpoints need a not-found-safe repository lookup.
+
+        Args:
+            case_id: Primary key of the case to fetch.
+
+        Returns:
+            BaseReconciliationCase | None: Stored case projection, or None.
+        """
 ```
 
 Repository pseudo code:
@@ -128,12 +290,13 @@ BaseReconciliationCaseRepository.get(case_id):
 
 ## Setup and Testing in Local Dev
 
-Settings and configuration: `DATABASE_URL` only.
+Settings and configuration: `DATABASE_URL` only. Use the explicit
+`postgresql+psycopg://` SQLAlchemy URL because this phase installs psycopg 3.
 
 Environment variables:
 
 ```bash
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai
+DATABASE_URL=postgresql+psycopg://reconai:reconai@localhost:5432/reconai
 ```
 
 Local commands:
@@ -179,6 +342,8 @@ Production steps:
 2. Run `uv run alembic upgrade head`.
 3. Confirm the `reconciliation_cases` table and indexes exist.
 4. Confirm existing `/health` behavior is unchanged.
+5. Roll back with `uv run alembic downgrade base` only before any Base API
+   writes exist, or restore the pre-migration backup if data was written.
 
 Expected outcome: production has the minimal table ready for later phases.
 
@@ -198,16 +363,20 @@ Data setup or migration steps: first migration only.
 | 6 | Audit log verification | N/A | Audit logging is deferred. |
 | 7 | Rate limit / quota verification | N/A | No API endpoint ships. |
 | 8 | Webhook delivery verification | N/A | Webhooks are not in scope. |
-| 9 | Rollback addresses in-flight tenant data | Addressed | Downgrade drops only the new empty table before API writes exist. |
+| 9 | Rollback addresses in-flight tenant data | Addressed | Downgrade is allowed only before Base API writes exist; otherwise restore the pre-migration backup. |
 | 10 | Kill switch drill without redeploy | N/A | No runtime feature is exposed. |
 
 ## Summary of Changes
 
+- [../../../.env.example](../../../.env.example) (modify): Uses the explicit psycopg SQLAlchemy URL for L1.
+- [../../../backend/README.md](../../../backend/README.md) (modify): Updates local DB commands to the psycopg URL for L1.
+- [../CONFIG.md](../CONFIG.md) (modify): Owns the explicit psycopg SQLAlchemy URL for L1.
 - [../../../backend/pyproject.toml](../../../backend/pyproject.toml) (modify): Adds DB and migration dependencies for L1.
 - `backend/alembic.ini` (new): Adds Alembic entrypoint for L2.
 - `backend/migrations/env.py` (new): Wires migrations to app metadata for L2.
 - `backend/migrations/versions/0001_reconciliation_cases.py` (new): Creates the Base API case table for L3.
 - `backend/app/db/session.py` (new): Adds engine/session helpers for L4.
+- `backend/app/features/reconciliation/contracts.py` (new): Adds typed persistence DTOs and status values for L5.
 - `backend/app/features/reconciliation/models.py` (new): Adds the SQLAlchemy model for L5.
 - `backend/app/features/reconciliation/repository.py` (new): Adds create/list/get storage behavior for L6.
 - `backend/tests/features/reconciliation/test_repository.py` (new): Adds repository and migration coverage for L7.
@@ -222,12 +391,14 @@ docstrings, commits, and change-summary rules apply unchanged.
 
 | ID | Category | Source | Pushed to (owner file) | Status |
 |----|----------|--------|------------------------|--------|
-| L1 | inherited | [../PLAN.md](../PLAN.md#m12-database-toolkit-and-minimal-case-storage) | -- | resolved |
+| L1 | inherited | [../PLAN.md](../PLAN.md#milestone-1-base-api-development) M1.2 table row | -- | resolved |
 | L2 | phase-local | Alembic env required for migrations | -- | phase-local |
 | L3 | inherited | [../MODELS.md](../MODELS.md#base-api-persistence-model) | -- | resolved |
 | L4 | phase-local | DB session helpers needed before repository/API | -- | phase-local |
 | L5 | inherited | [../DEFINITIONS.md](../DEFINITIONS.md#repository-port) | -- | resolved |
 | L6 | inherited | [../TESTING.md](../TESTING.md#milestone-1-base-api-tests) | -- | resolved |
 | L7 | assumption | Current backend has no Alembic/ORM | -- | verified in code |
+| L8 | assumption | PostgreSQL remains the only Compose service | -- | verified in code |
+| L9 | assumption | Milestone 1 remains non-tenantized | -- | resolved |
 
 </details>
