@@ -46,8 +46,8 @@ Decision tests:
   explicitly partial-like, then returns `PARTIAL_PAYMENT`.
 - Paid amount above agreed amount returns `OVERPAID`.
 - Missing actual payment returns `PAYMENT_NOT_FOUND`.
-- Low confidence below the M1.1 threshold, extraction review flag, missing
-  agreed amount, or currency mismatch returns `NEEDS_REVIEW`.
+- Confidence below `0.80`, extraction review flag, missing agreed amount, or
+  currency mismatch returns `NEEDS_REVIEW`.
 
 Persistence tests:
 

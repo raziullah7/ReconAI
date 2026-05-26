@@ -34,7 +34,7 @@ The owning files are:
   interfaces.
 - [TESTING.md](TESTING.md) owns test scope by milestone.
 - [PLAN.md](PLAN.md) owns sequence, review gates, and phase boundaries.
-- [PHASE-1.md](PHASE-1.md) owns the already-scoped local foundation phase.
+- [milestone-1-base-api-development/](milestone-1-base-api-development/) owns the detailed Milestone 1 phase plans.
 
 ## Milestone Map
 
@@ -84,8 +84,7 @@ frontend setup is intentionally deferred.
 
 1. [README.md](README.md) - where to start and what is implemented now.
 2. [PLAN.md](PLAN.md) - milestone sequence and review gates.
-3. [PHASE-1.md](PHASE-1.md) - detailed execution plan for the current small
-   foundation phase.
+3. [milestone-1-base-api-development/](milestone-1-base-api-development/) - detailed Milestone 1 phase plans.
 4. [API.md](API.md) - Base API contract and target endpoint contracts.
 5. [MODELS.md](MODELS.md) - Base persistence shape and target data model.
 6. [DEFINITIONS.md](DEFINITIONS.md) - function and service contracts.
@@ -103,7 +102,7 @@ frontend setup is intentionally deferred.
 | [ARCH.md](ARCH.md) | Architecture direction and tradeoffs | Target architecture |
 | [SPEC.md](SPEC.md) | Technical design | Target design, not fully implemented |
 | [PLAN.md](PLAN.md) | Milestone sequence and review gates | Current implementation guide |
-| [PHASE-1.md](PHASE-1.md) | One phase execution detail | Current narrow foundation phase |
+| [milestone-1-base-api-development/](milestone-1-base-api-development/) | Milestone 1 phase plans | Ready for review-gated implementation |
 | [CONFIG.md](CONFIG.md) | Runtime settings and feature flags | Split into current and deferred |
 | [TESTING.md](TESTING.md) | Test strategy by phase maturity | Small backend tests first |
 | [API.md](API.md) | Base API and target endpoint contracts | Base API contract ready for review |
@@ -113,9 +112,10 @@ frontend setup is intentionally deferred.
 
 ## Folder Rules
 
-- Keep this folder flat for now so links remain easy to follow.
+- Keep target reference docs at the root so links remain easy to follow.
+- Use milestone folders for detailed phase plans.
 - Use `PLAN.md` for milestone sequencing and review gates only.
-- Use `PHASE-{N}.md` for one phase at a time.
+- Use `PHASE-M{N}.{X}-*.md` files inside milestone folders for one phase at a time.
 - Add frontend setup only in its own later phase, after the backend has useful
   API behavior.
 - Do not move Redis, Ollama, workers, or Dockerized apps into an early phase

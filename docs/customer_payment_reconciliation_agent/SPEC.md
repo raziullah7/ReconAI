@@ -40,8 +40,8 @@ Flow:
 Decision order:
 
 1. If extraction validation fails, return `ValidationFailed` before persistence.
-2. If `needs_human_review` is true, confidence is below the threshold selected in M1.1,
-   or required agreement fields are missing, create a `NEEDS_REVIEW` decision.
+2. If `needs_human_review` is true, confidence is below `0.80`, or required
+   agreement fields are missing, create a `NEEDS_REVIEW` decision.
 3. If no actual payment is supplied, create `PAYMENT_NOT_FOUND`.
 4. If currencies conflict, create `NEEDS_REVIEW`.
 5. If paid amount equals agreed amount, create `RECONCILED`.

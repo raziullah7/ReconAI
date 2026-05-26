@@ -47,9 +47,12 @@ Type: environment variable.
 Purpose: numeric threshold for routing low-confidence agreement extractions to
 `NEEDS_REVIEW` during Base API decision-making.
 
-Current status: not required by the Phase 1 foundation app. M1.1 must select the
-value, or remove threshold-based review routing from the Base API rules, before
-M1.3 validation and reconciliation code starts.
+Default for Milestone 1: `0.80`. Values below `0.80` route the case to
+`NEEDS_REVIEW`; values equal to or above `0.80` may be automatically
+decided when the rest of the extraction and payment evidence is valid.
+
+Current status: not required by the Phase 1 foundation app. Milestone 1
+introduces this setting during validation and decision implementation.
 
 Runtime: restart the backend after changing it once the Base API phase
 introduces this setting.
@@ -72,11 +75,11 @@ in the current foundation phase.
 | `RECONAI_PROCESSING_ENABLED` | Worker runtime phase | There is no processing pipeline yet. |
 | `RECONAI_NOTIFICATIONS_ENABLED` | Notification phase, if kept in scope | Notifications are not in the early build. |
 | `RECONAI_EXPORTS_ENABLED` | Dashboard/export phase | Exports are not implemented yet. |
-| `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD` | Base API validation/decision phase | Gate A must choose the value before validation code starts; it is not required by Phase 1. |
+| `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD` | Base API validation/decision phase | Default is `0.80`; it is not required by Phase 1. |
 
 ## Open Questions
 
-- Confirm the extraction confidence threshold before implementing Base API
-  validation and later local AI review routing.
+- Revisit the `0.80` extraction confidence threshold after real local LLM
+  fixture data exists.
 - Confirm the local LLM model before adding Ollama or worker sizing docs.
 - Confirm CSV import columns before payment import is planned.
