@@ -1,5 +1,8 @@
 # API.md
 
+> Status: This is a target design document. It does not mean every item is implemented today. Use [README.md](README.md) and [PLAN.md](PLAN.md) for the current implementation phase.
+
+
 ## Versioning Strategy
 
 Use URL path versioning with `/v1`. The current planned API version is `/v1`. Deprecated endpoints use `Deprecation` and `Sunset` headers without embedding calendar dates in planning docs.
@@ -26,6 +29,150 @@ All non-2xx responses use the canonical error taxonomy from [SPEC.md](SPEC.md#7-
 - Pagination: cursor pagination for list endpoints with `limit` bounds and `has_more` response field.
 - Rate limits: per-tenant and per-user buckets; `429` includes `Retry-After` and `X-RateLimit-*` headers.
 - Webhooks: not included in base delivery; future outgoing webhooks must be HMAC-signed and replay-protected.
+
+## Base API Milestone Contract
+
+Milestone 1 exposes a local, non-tenantized Base API so the backend can become
+useful before auth, tenants, workers, Redis, Ollama, or the frontend are added.
+The target tenant-scoped endpoints later in this file remain the long-term API
+direction.
+
+### Base API Rules
+
+- Base paths use `/v1/reconciliation-cases`.
+- Authentication is not required in Milestone 1.
+- Idempotency keys are deferred until the target tenantized mutation layer.
+- The backend accepts an LLM-shaped extraction payload, validates it, computes
+  the final reconciliation decision, stores the case, and returns the stored
+  result.
+- The LLM never decides the final reconciliation status. It only supplies
+  extracted agreement fields.
+
+### Base API Schemas
+
+```typescript
+interface AgreementExtractionInputV1 {
+  schema_version: 'agreement_extraction.v1';
+  agreed_amount_minor: MinorMoney | null;
+  currency: CurrencyCode | null;
+  payment_type: PaymentType;
+  due_date: DateOnly | null;
+  is_final_amount: boolean | null;
+  evidence_text: string | null;
+  confidence: number;
+  needs_human_review: boolean;
+  model_name?: string;
+  raw_llm_output?: unknown;
+}
+
+interface ActualPaymentInputV1 {
+  paid_amount_minor: MinorMoney | null;
+  currency: CurrencyCode | null;
+  payment_date?: DateOnly | null;
+  reference?: string | null;
+  payment_method?: string | null;
+}
+
+interface ReconciliationCaseCreateRequestV1 {
+  external_reference?: string | null;
+  customer_reference?: string | null;
+  source_text?: string | null;
+  extraction: AgreementExtractionInputV1;
+  actual_payment?: ActualPaymentInputV1 | null;
+}
+
+interface ReconciliationDecisionV1 {
+  status: ReconciliationStatus;
+  agreed_amount_minor: MinorMoney | null;
+  paid_amount_minor: MinorMoney | null;
+  difference_minor: MinorMoney | null;
+  currency: CurrencyCode | null;
+  reason: string;
+  needs_human_review: boolean;
+}
+
+interface ReconciliationCaseResponseV1 {
+  id: UUID;
+  external_reference?: string | null;
+  customer_reference?: string | null;
+  source_text?: string | null;
+  extraction: AgreementExtractionInputV1;
+  actual_payment?: ActualPaymentInputV1 | null;
+  decision: ReconciliationDecisionV1;
+  created_at: DateTime;
+  updated_at: DateTime;
+}
+
+interface ReconciliationCaseListItemV1 {
+  id: UUID;
+  external_reference?: string | null;
+  customer_reference?: string | null;
+  status: ReconciliationStatus;
+  agreed_amount_minor: MinorMoney | null;
+  paid_amount_minor: MinorMoney | null;
+  difference_minor: MinorMoney | null;
+  currency: CurrencyCode | null;
+  needs_human_review: boolean;
+  created_at: DateTime;
+  updated_at: DateTime;
+}
+```
+
+Example extraction fixture:
+
+```json
+{
+  "schema_version": "agreement_extraction.v1",
+  "agreed_amount_minor": 250000,
+  "currency": "PKR",
+  "payment_type": "FULL_PAYMENT",
+  "due_date": "2026-06-10",
+  "is_final_amount": true,
+  "evidence_text": "Customer agreed to pay PKR 2,500 by June 10.",
+  "confidence": 0.92,
+  "needs_human_review": false,
+  "model_name": "mock-extractor",
+  "raw_llm_output": {
+    "source": "fixture"
+  }
+}
+```
+
+Example actual payment fixture:
+
+```json
+{
+  "paid_amount_minor": 250000,
+  "currency": "PKR",
+  "payment_date": "2026-06-09",
+  "reference": "TXN-001",
+  "payment_method": "bank_transfer"
+}
+```
+
+### Base API Endpoints
+
+#### POST /v1/reconciliation-cases
+
+Authentication: deferred for Milestone 1.
+Idempotency: deferred for Milestone 1.
+Request body: `ReconciliationCaseCreateRequestV1`.
+Response `201`: `ReconciliationCaseResponseV1`.
+Errors: `ValidationFailed`.
+
+#### GET /v1/reconciliation-cases
+
+Authentication: deferred for Milestone 1.
+Query: optional `status`, `limit`, and `offset` until cursor pagination is added
+in the target API.
+Response `200`: `{ items: ReconciliationCaseListItemV1[] }`.
+Errors: `ValidationFailed`.
+
+#### GET /v1/reconciliation-cases/{case_id}
+
+Authentication: deferred for Milestone 1.
+Response `200`: `ReconciliationCaseResponseV1`.
+Errors: `NotFound`, `ValidationFailed`.
 
 ## Shared Schemas
 
@@ -99,155 +246,155 @@ interface ExportResponse { export_id: UUID; status: 'QUEUED' | 'RUNNING' | 'SUCC
 
 ### POST /v1/tenants/{tenant_id}/auth/login
 
-Authentication: public within tenant login context.  
-Authorization: no prior role; response role gates later requests.  
-Idempotency: not applicable.  
-Request body: `{ email: string; password: string }`.  
-Response `200`: `UserSession`.  
+Authentication: public within tenant login context.
+Authorization: no prior role; response role gates later requests.
+Idempotency: not applicable.
+Request body: `{ email: string; password: string }`.
+Response `200`: `UserSession`.
 Errors: `Unauthenticated`, `ValidationFailed`, `TenantSuspended`, `RateLimited`.
 
 ### GET /v1/tenants/{tenant_id}/customers
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User, Reviewer, Manager.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: not applicable.  
-Query: `CustomerListQuery`.  
-Response `200`: `Page<Customer>`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User, Reviewer, Manager.
+Tenant scoping: path plus token tenant access.
+Idempotency: not applicable.
+Query: `CustomerListQuery`.
+Response `200`: `Page<Customer>`.
 Errors: `Forbidden`, `RateLimited`.
 
 ### POST /v1/tenants/{tenant_id}/customers
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: `Idempotency-Key` required.  
-Request body: `CustomerCreateRequest`.  
-Response `201`: `Customer`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User.
+Tenant scoping: path plus token tenant access.
+Idempotency: `Idempotency-Key` required.
+Request body: `CustomerCreateRequest`.
+Response `201`: `Customer`.
 Errors: `ValidationFailed`, `Forbidden`, `IdempotencyConflict`.
 
 ### POST /v1/tenants/{tenant_id}/calls
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: `Idempotency-Key` required.  
-Request body: `CallCreateRequest`; exactly one of `recording_upload_id` or `transcript_text` must be supplied.  
-Response `202`: `CallSummary`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User.
+Tenant scoping: path plus token tenant access.
+Idempotency: `Idempotency-Key` required.
+Request body: `CallCreateRequest`; exactly one of `recording_upload_id` or `transcript_text` must be supplied.
+Response `202`: `CallSummary`.
 Errors: `ValidationFailed`, `Forbidden`, `FeatureNotEnabled`, `ProcessingFailed`, `IdempotencyConflict`.
 
 ### GET /v1/tenants/{tenant_id}/calls/{call_id}
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User, Reviewer, Manager.  
-Tenant scoping: path plus token tenant access and call ownership.  
-Idempotency: not applicable.  
-Response `200`: `CallDetail`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User, Reviewer, Manager.
+Tenant scoping: path plus token tenant access and call ownership.
+Idempotency: not applicable.
+Response `200`: `CallDetail`.
 Errors: `NotFound`, `Forbidden`.
 
 ### GET /v1/tenants/{tenant_id}/calls/{call_id}/transcript
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User, Reviewer, Manager.  
-Tenant scoping: path plus token tenant access and call ownership.  
-Idempotency: not applicable.  
-Response `200`: `TranscriptResponse`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User, Reviewer, Manager.
+Tenant scoping: path plus token tenant access and call ownership.
+Idempotency: not applicable.
+Response `200`: `TranscriptResponse`.
 Errors: `NotFound`, `Forbidden`.
 
 ### POST /v1/tenants/{tenant_id}/payments
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: `Idempotency-Key` required.  
-Request body: `PaymentCreateRequest`; `amount_minor` must be a positive integer and `currency` is required.  
-Response `201`: `Payment` with `source = MANUAL`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User.
+Tenant scoping: path plus token tenant access.
+Idempotency: `Idempotency-Key` required.
+Request body: `PaymentCreateRequest`; `amount_minor` must be a positive integer and `currency` is required.
+Response `201`: `Payment` with `source = MANUAL`.
 Errors: `ValidationFailed`, `Conflict`, `Forbidden`, `IdempotencyConflict`.
 
 ### POST /v1/tenants/{tenant_id}/payments/imports
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: `Idempotency-Key` required.  
-Request body: `PaymentImportRequest`.  
-Response `202`: `PaymentImportResponse`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User.
+Tenant scoping: path plus token tenant access.
+Idempotency: `Idempotency-Key` required.
+Request body: `PaymentImportRequest`.
+Response `202`: `PaymentImportResponse`.
 Errors: `ValidationFailed`, `Forbidden`, `ProcessingFailed`, `IdempotencyConflict`.
 
 ### GET /v1/tenants/{tenant_id}/payments
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User, Reviewer.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: not applicable.  
-Query: `PaymentListQuery`.  
-Response `200`: `Page<Payment>`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User, Reviewer.
+Tenant scoping: path plus token tenant access.
+Idempotency: not applicable.
+Query: `PaymentListQuery`.
+Response `200`: `Page<Payment>`.
 Errors: `Forbidden`, `RateLimited`.
 
 ### POST /v1/tenants/{tenant_id}/calls/{call_id}/reprocess
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Reviewer.  
-Tenant scoping: path plus token tenant access and call ownership.  
-Idempotency: `Idempotency-Key` required.  
-Request body: `ReprocessRequest`.  
-Response `202`: `ProcessingAttemptResponse`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Reviewer.
+Tenant scoping: path plus token tenant access and call ownership.
+Idempotency: `Idempotency-Key` required.
+Request body: `ReprocessRequest`.
+Response `202`: `ProcessingAttemptResponse`.
 Errors: `ValidationFailed`, `Forbidden`, `Conflict`, `ProcessingFailed`, `IdempotencyConflict`.
 
 ### GET /v1/tenants/{tenant_id}/cases
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User, Reviewer, Manager.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: not applicable.  
-Query: `CaseListQuery`.  
-Response `200`: `Page<CaseSummary>`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User, Reviewer, Manager.
+Tenant scoping: path plus token tenant access.
+Idempotency: not applicable.
+Query: `CaseListQuery`.
+Response `200`: `Page<CaseSummary>`.
 Errors: `Forbidden`, `RateLimited`.
 
 ### GET /v1/tenants/{tenant_id}/cases/{case_id}
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User, Reviewer, Manager.  
-Tenant scoping: path plus token tenant access and case ownership.  
-Idempotency: not applicable.  
-Response `200`: `CaseDetail`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User, Reviewer, Manager.
+Tenant scoping: path plus token tenant access and case ownership.
+Idempotency: not applicable.
+Response `200`: `CaseDetail`.
 Errors: `NotFound`, `Forbidden`.
 
 ### POST /v1/tenants/{tenant_id}/cases/{case_id}/review-actions
 
-Authentication: Bearer JWT.  
-Authorization: Admin and Reviewer; Finance User only if product policy confirms review authority.  
-Tenant scoping: path plus token tenant access and case ownership.  
-Idempotency: `Idempotency-Key` required.  
-Request body: `ReviewActionRequest`; `note` is required for all actions and `expected_case_version` enforces optimistic locking.  
-Response `200`: `ReviewActionResponse`.  
+Authentication: Bearer JWT.
+Authorization: Admin and Reviewer; Finance User only if product policy confirms review authority.
+Tenant scoping: path plus token tenant access and case ownership.
+Idempotency: `Idempotency-Key` required.
+Request body: `ReviewActionRequest`; `note` is required for all actions and `expected_case_version` enforces optimistic locking.
+Response `200`: `ReviewActionResponse`.
 Errors: `ValidationFailed`, `Forbidden`, `Conflict`, `IdempotencyConflict`.
 
 ### GET /v1/tenants/{tenant_id}/cases/{case_id}/audit-log
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Reviewer, Manager; Finance User for accessible cases.  
-Tenant scoping: path plus token tenant access and case ownership.  
-Idempotency: not applicable.  
-Response `200`: `Page<AuditEntry>`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Reviewer, Manager; Finance User for accessible cases.
+Tenant scoping: path plus token tenant access and case ownership.
+Idempotency: not applicable.
+Response `200`: `Page<AuditEntry>`.
 Errors: `NotFound`, `Forbidden`.
 
 ### GET /v1/tenants/{tenant_id}/dashboard/summary
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Finance User, Reviewer, Manager.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: not applicable.  
-Query: date range and optional `CaseListQuery` filters.  
-Response `200`: `DashboardSummary`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Finance User, Reviewer, Manager.
+Tenant scoping: path plus token tenant access.
+Idempotency: not applicable.
+Query: date range and optional `CaseListQuery` filters.
+Response `200`: `DashboardSummary`.
 Errors: `Forbidden`, `RateLimited`.
 
 ### POST /v1/tenants/{tenant_id}/exports/reconciliation-cases
 
-Authentication: Bearer JWT.  
-Authorization: Admin, Manager.  
-Tenant scoping: path plus token tenant access.  
-Idempotency: `Idempotency-Key` required.  
-Request body: `ExportRequest`.  
-Response `202`: `ExportResponse`.  
+Authentication: Bearer JWT.
+Authorization: Admin, Manager.
+Tenant scoping: path plus token tenant access.
+Idempotency: `Idempotency-Key` required.
+Request body: `ExportRequest`.
+Response `202`: `ExportResponse`.
 Errors: `ValidationFailed`, `Forbidden`, `FeatureNotEnabled`, `ExportFailed`, `IdempotencyConflict`.

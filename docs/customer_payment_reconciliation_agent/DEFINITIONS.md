@@ -1,6 +1,57 @@
 # DEFINITIONS.md
 
+> Status: This is a target design document. It does not mean every item is implemented today. Use [README.md](README.md) and [PLAN.md](PLAN.md) for the current implementation phase.
+
+
 This file owns typed interfaces and function/class contracts. API payloads live in [API.md](API.md); data schemas live in [MODELS.md](MODELS.md).
+
+## Base API Interfaces
+
+Milestone 1 uses these names before the target tenant/auth/service surface is
+introduced.
+
+### Types
+
+- `AgreementExtractionInputV1`: Pydantic request model matching [API.md](API.md).
+- `ActualPaymentInputV1`: Pydantic request model matching [API.md](API.md).
+- `ReconciliationCaseCreateV1`: application input that combines optional
+  references, source text, extraction, and actual payment.
+- `ValidatedAgreementExtraction`: normalized agreement fields accepted by the
+  backend after schema validation.
+- `ValidatedActualPayment`: normalized payment evidence accepted by the backend.
+- `ReconciliationDecisionV1`: status, amounts, difference, currency, reason, and
+  review flag returned by the pure decision function.
+- `BaseReconciliationCase`: stored case projection matching [MODELS.md](MODELS.md).
+
+### Pure Functions
+
+- `validate_agreement_extraction_input(input: AgreementExtractionInputV1) -> ValidatedAgreementExtraction`
+  - Rejects malformed LLM-shaped output before any database write.
+  - Does not call the LLM.
+
+- `validate_actual_payment_input(input: ActualPaymentInputV1 | None) -> ValidatedActualPayment | None`
+  - Normalizes manually supplied payment evidence.
+  - Treats missing payment evidence as a valid input for `PAYMENT_NOT_FOUND`.
+
+- `decide_base_reconciliation(extraction: ValidatedAgreementExtraction, actual_payment: ValidatedActualPayment | None) -> ReconciliationDecisionV1`
+  - Applies deterministic rules in a fixed order.
+  - Gives review-safe output when confidence is low, required agreement fields
+    are missing, the extraction asks for human review, or currencies conflict.
+
+### Repository Port
+
+- `BaseReconciliationCaseRepository` (class): Milestone 1 case persistence.
+  - `create(input: ReconciliationCaseCreateV1, decision: ReconciliationDecisionV1) -> BaseReconciliationCase`
+  - `list(status: ReconciliationStatus | None, limit: int, offset: int) -> list[BaseReconciliationCase]`
+  - `get(case_id: UUID) -> BaseReconciliationCase | None`
+
+### Application Service
+
+- `BaseReconciliationCaseService` (class): validates input, computes the
+  decision, persists the case, and returns the API response model.
+  - `create_case(input: ReconciliationCaseCreateV1) -> ReconciliationCaseResponseV1`
+  - `list_cases(status: ReconciliationStatus | None, limit: int, offset: int) -> list[ReconciliationCaseListItemV1]`
+  - `get_case(case_id: UUID) -> ReconciliationCaseResponseV1 | None`
 
 ## Ambient Context Types
 

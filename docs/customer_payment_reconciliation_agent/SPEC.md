@@ -1,5 +1,8 @@
 # SPEC.md
 
+> Status: This is a target design document. It does not mean every item is implemented today. Use [README.md](README.md) and [PLAN.md](PLAN.md) for the current implementation phase.
+
+
 ## 1. Metadata
 
 **Feature Name**: Customer Payment Reconciliation Agent  
@@ -19,6 +22,37 @@ Key decisions:
 - Keep deterministic reconciliation in a functional core with side effects isolated in services and repositories.
 - Store raw LLM output but only use validated extraction fields for business decisions.
 - Treat review actions, payment linking, reprocessing, and exports as audit-relevant mutations.
+
+## Milestone 1: Base API No-LLM Flow
+
+Milestone 1 proves the backend reconciliation loop without calling a real LLM.
+The caller supplies an `AgreementExtractionInputV1` payload that has the same
+shape the future LLM adapter must emit.
+
+Flow:
+
+1. Accept `ReconciliationCaseCreateRequestV1` at the Base API boundary.
+2. Validate `AgreementExtractionInputV1` and optional `ActualPaymentInputV1`.
+3. Compute the reconciliation decision in a pure function.
+4. Persist the extraction snapshot, payment snapshot, and decision.
+5. Return the stored case response.
+
+Decision order:
+
+1. If extraction validation fails, return `ValidationFailed` before persistence.
+2. If `needs_human_review` is true, confidence is below the threshold selected in M1.1,
+   or required agreement fields are missing, create a `NEEDS_REVIEW` decision.
+3. If no actual payment is supplied, create `PAYMENT_NOT_FOUND`.
+4. If currencies conflict, create `NEEDS_REVIEW`.
+5. If paid amount equals agreed amount, create `RECONCILED`.
+6. If paid amount is below agreed amount and payment type is `ADVANCE`,
+   `PARTIAL_PAYMENT`, or `INSTALLMENT`, create `PARTIAL_PAYMENT`.
+7. If paid amount is below agreed amount, create `UNDERPAID`.
+8. If paid amount is above agreed amount, create `OVERPAID`.
+
+The LLM integration milestone replaces the fixture/manual source of
+`AgreementExtractionInputV1`; it does not replace backend validation or backend
+status decisions.
 
 ## 3. Detailed Design
 

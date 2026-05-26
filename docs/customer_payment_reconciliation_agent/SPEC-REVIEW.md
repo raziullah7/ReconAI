@@ -63,7 +63,7 @@ No unresolved cross-file contradictions found after the SR-001 through SR-006 fi
 
 ### Codebase Alignment Issues
 
-No implementation code exists beyond placeholder `frontend/` and `backend/` folders, so proposed locations are forward-looking and not in conflict with current code.
+The current implementation is intentionally backend-first: `backend/` contains the FastAPI shell, while `frontend/` is documentation-only until a later frontend setup phase. Proposed product locations remain forward-looking.
 
 ### Recommendation
 

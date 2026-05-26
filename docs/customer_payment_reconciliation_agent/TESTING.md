@@ -1,113 +1,97 @@
 # TESTING.md
 
-## Unit Tests
+> Status: Testing should grow with the system. Early scaffold phases should
+> have a few useful backend tests, not a large suite of placeholder or meta
+> tests.
 
-- `validate_extraction`: valid extraction, missing amount, invalid amount, unsupported currency, low confidence, missing evidence.
-- `match_candidate_payments`: customer match, phone match, invoice match, currency mismatch, amount similarity, no candidates, ambiguous candidates.
-- `decide_reconciliation`: covers `RECONCILED`, `UNDERPAID`, `OVERPAID`, `PARTIAL_PAYMENT`, `PAYMENT_NOT_FOUND`, `MULTIPLE_MATCHES_FOUND`, `NEEDS_REVIEW`, and `FAILED`.
-- `recalculate_case_after_review`: link, unlink, edit amount, reject, approve, stale version conflict.
+## Current Testing Policy
 
-## Integration Tests
+- Test behavior that exists now.
+- Avoid broad folder-shape tests unless the structure is the actual feature.
+- Do not add browser, backend integration, seed, or reset scripts unless the
+  phase explicitly needs them.
+- Keep scaffold phases to roughly 1-3 focused tests per subsystem.
+- Add frontend tests only when the frontend setup phase exists.
+- Add more tests when persistence, tenant isolation, auth, workers, or
+  reconciliation rules actually exist.
 
-- Intake creates call record, audit log, and processing attempt in one tenant.
-- Worker transition updates call status and attempt status safely.
-- Extraction persists raw output and validated fields but reconciliation reads validated fields only.
-- CSV import accepts valid rows, rejects invalid rows, and returns row-level errors.
-- Review action links payment, recalculates case, and appends audit log.
+## Phase 1 Tests
 
-## E2E Tests
+Backend:
 
-- Auth -> tenant context -> upload call -> transcript/extraction -> matching -> reconciled case -> audit log.
-- Auth -> tenant context -> no payment found -> review queue -> manual payment link -> recalculated result -> audit log.
-- Auth -> tenant context -> CSV import -> payment candidate search -> case list filter -> export.
+- Settings require only `DATABASE_URL`.
+- Compose declares only the Postgres service.
+- Health endpoint returns the stable app-shell response.
 
-## BDD Scenario Mapping
+Frontend:
 
-| BDD Tag | Business Rule | Test Level | Automation Owner | Notes |
-| --- | --- | --- | --- | --- |
-| `@bdd-001` | Intake creates traceable processing case | E2E | backend + frontend | Upload/transcript intake. |
-| `@bdd-002` | LLM extraction validated before use | integration | backend | Raw vs validated fields. |
-| `@bdd-003` | Payment records available for matching | integration | backend | Manual payment create. |
-| `@bdd-004` | Exact match reconciles | unit + E2E | backend | Rule and full flow. |
-| `@bdd-005` | Amount differences classify | unit | backend | Scenario outline maps to table tests. |
-| `@bdd-006` | Unsafe outcomes route safely | unit + integration | backend | Low confidence, no payment, multiple matches. |
-| `@bdd-007` | Reviewer resolves risky cases | E2E | backend + frontend | Manual link and note. |
-| `@bdd-008` | Audit trail visible | E2E | backend + frontend | Ordered action history. |
-| `@bdd-009` | Filter and export | E2E | backend + frontend | Export respects filters. |
-| `@bdd-010` | Reprocessing preserves history | integration + E2E | backend | Prior extraction remains traceable. |
+- No frontend tests yet. The frontend is intentionally deferred.
 
-## Tenant Isolation Tests
+## Milestone 1 Base API Tests
 
-For every endpoint, attempt access using tenant A credentials and tenant B IDs. Expected result is 403 or 404 without leaking tenant B data. Include call, transcript, payment, case, audit, export, and processing attempt resources.
+Milestone 1 should add focused tests only for the behavior it introduces.
 
-## Permission Matrix Tests
+Validation tests:
 
-| Operation | Admin | Finance User | Reviewer | Manager |
-| --- | --- | --- | --- | --- |
-| Manage users/config | allow | deny | deny | deny |
-| Create customer/payment | allow | allow | deny | deny |
-| Upload call/transcript | allow | allow | deny | deny |
-| View dashboard/cases | allow | allow | allow | allow |
-| Review action finalize | allow | policy-dependent | allow | deny |
-| Reprocess call | allow | deny | allow | deny |
-| Export results | allow | deny | deny | allow |
+- Accept a valid `AgreementExtractionInputV1` fixture.
+- Reject invalid amount, invalid confidence, invalid currency, missing evidence
+  for low-confidence data, and unsupported `payment_type`.
+- Accept an `ActualPaymentInputV1` fixture with minor-unit money and matching
+  currency.
 
-## Security Tests
+Decision tests:
 
-- IDOR tests for every tenant-scoped resource ID.
-- SQL injection tests for filters and CSV import values.
-- Auth bypass tests for missing, expired, and malformed tokens.
-- File upload tests for invalid type, oversize file, unsafe filename, and storage path traversal.
-- Raw LLM output display tests for escaping and redaction.
+- Exact amount and currency match returns `RECONCILED`.
+- Paid amount below agreed amount returns `UNDERPAID` unless the payment type is
+  explicitly partial-like, then returns `PARTIAL_PAYMENT`.
+- Paid amount above agreed amount returns `OVERPAID`.
+- Missing actual payment returns `PAYMENT_NOT_FOUND`.
+- Low confidence below the M1.1 threshold, extraction review flag, missing
+  agreed amount, or currency mismatch returns `NEEDS_REVIEW`.
 
-## Idempotency Tests
+Persistence tests:
 
-- Duplicate idempotency key with identical payload returns identical response and no extra side effect.
-- Duplicate idempotency key with different payload returns `IdempotencyConflict`.
-- Concurrent duplicate processing jobs commit only one final state transition.
+- Repository creates a case with extraction and payment snapshots.
+- Repository lists cases in newest-first order.
+- Repository fetches one case by ID and returns not-found for an unknown ID.
 
-## Rate Limit Tests
+API tests:
 
-- Bucket exhaustion returns 429 with retry and limit headers.
-- Tenant A exhausting a bucket does not affect tenant B.
-- Worker queue pressure does not bypass API rate limits.
+- `POST /v1/reconciliation-cases` persists and returns the computed decision.
+- `GET /v1/reconciliation-cases` returns stored case summaries.
+- `GET /v1/reconciliation-cases/{case_id}` returns the stored detail.
+- Invalid payloads use the canonical error envelope from [API.md](API.md).
 
-## Plan-Tier / Feature-Flag Tests
+Not in Milestone 1 tests:
 
-- Disabled processing flag prevents new jobs but keeps existing records readable.
-- Disabled exports flag hides export UI and rejects export endpoint with `FeatureNotEnabled`.
-- Notifications flag disabled results in no notification side effects.
+- Real LLM calls.
+- Frontend tests.
+- Tenant isolation.
+- Auth or role checks.
+- Redis, worker, queue, or Ollama behavior.
+- CSV imports or payment-ledger matching.
 
-## Contract Tests
+## Later Test Growth
 
-Use JSON-schema provider verification for API response envelopes, endpoint payloads, and export formats. Consumer-driven contracts may be added when external integrations are introduced.
-
-## Performance and Load Tests
-
-- Upload endpoint returns quickly after queue handoff.
-- Worker concurrency remains bounded under multiple queued calls.
-- Dashboard and case list p95 latency remain acceptable under seeded tenant data.
-- Noisy-neighbor test ensures one tenant's queued jobs do not expose or corrupt another tenant's data.
-
-## Edge Cases
-
-- Transcription timeout.
-- LLM runtime unavailable.
-- Invalid LLM JSON.
-- Duplicate payment import row.
-- Multiple candidate payments with same confidence.
-- Payment linked after `PAYMENT_NOT_FOUND` case creation.
-- Reprocessing while previous job is running.
-- Export requested with empty result set.
-
-## Test Data Strategy
-
-Use per-tenant fixture factories. No shared mutable state across tenants. Integration tests isolate data through transaction rollback or database reset. Test recordings and transcripts should use small synthetic files with no real customer PII.
+| Milestone Area | Test Growth |
+| --- | --- |
+| Base frontend | component and API-client tests after frontend setup exists |
+| LLM integration | parser fixtures, adapter contract tests, and invalid-output cases |
+| Tenant context | tenant isolation unit tests |
+| Auth | protected route and permission tests |
+| Customers/payments | API behavior and repository tests |
+| Call intake | upload/transcript and storage boundary tests |
+| Redis/queue | queue enqueue/dequeue smoke tests |
+| Workers | status transition and retry tests |
+| Reconciliation against ledger | table-driven matching and rule tests |
+| Review workflow | review action and audit tests |
+| Dashboard/export | UI smoke and export contract tests |
 
 ## Tooling
 
-- Backend unit/integration: pytest.
-- Frontend component/E2E: Vitest and Playwright after frontend scaffold exists.
-- Contract: JSON schema verification.
-- Load: k6 or Locust after API stabilizes.
-- CI: run unit and contract tests on pull request; integration/E2E on merge or release candidate.
+- Backend: pytest from `backend/` with `uv run python -m pytest`.
+- Backend types: `uv run mypy app`.
+- Backend lint: `uv run ruff check .`.
+- Frontend: deferred until the frontend setup phase.
+- Browser E2E: deferred until the UI has real workflows.
+- Load/performance tests: deferred until APIs stabilize.

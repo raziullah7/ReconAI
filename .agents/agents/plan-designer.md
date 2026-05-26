@@ -60,6 +60,25 @@ Also read these documents if they exist:
 
 Load the `planning-conventions` skill for the complete planning conventions: document ownership, anti-duplication rules, reference formatting, review process, and workflow.
 
+## Learning-Friendly Phase Mode
+
+When the user asks to go slowly, keep the project minimal, or make the
+work easier to understand, apply this mode before normal LOC sizing:
+
+- Plan one subsystem per phase. Backend shell, frontend shell, database
+  tooling, Redis, workers, local AI, and deployment each get separate
+  phases unless the user explicitly approves combining them.
+- A phase may introduce at most one new runtime service. Do not add
+  Compose services for future phases.
+- Every phase must include a short `Run After This Phase` item with the
+  exact command or endpoint the user can try.
+- Scaffold phases should carry only 1-3 focused tests per subsystem. Do
+  not add broad meta tests just to prove folders exist.
+- Prefer a smaller understandable phase over a larger phase that only
+  fits the LOC budget on paper.
+- If an artifact is useful only later, list it as deferred instead of
+  adding a placeholder file, script, service, or test now.
+
 ## Document Ownership
 
 **PLAN.md is the source of truth for**: phase sequencing, TDD steps per phase, phase mapping (which items are introduced per phase), rollback strategy per phase, implementation-order risks, and rollout observability.
