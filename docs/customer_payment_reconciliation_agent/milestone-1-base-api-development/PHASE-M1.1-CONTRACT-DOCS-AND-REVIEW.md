@@ -12,7 +12,8 @@ before database, validation, or API work begins.
 
 Assumptions:
 
-- The current backend remains a FastAPI health-check shell.
+- The current backend remains a FastAPI health-check shell, verified by a
+  read-only spot-check against the app shell files.
 - Milestone 1 remains local and non-tenantized.
 - The confidence threshold is `0.80`, as owned by [../CONFIG.md](../CONFIG.md).
 
@@ -89,8 +90,19 @@ Environment variables: none for docs checks.
 Local commands:
 
 ```bash
-rg -n "AgreementExtractionInputV1|ActualPaymentInputV1|0.80|/v1/reconciliation-cases" docs/customer_payment_reconciliation_agent
-rg -n "Redis|Ollama|worker|frontend|tenant|auth" docs/customer_payment_reconciliation_agent/PLAN.md
+rg -n "AgreementExtractionInputV1|ActualPaymentInputV1|/v1/reconciliation-cases" \
+  docs/customer_payment_reconciliation_agent/API.md
+rg -n "AgreementExtractionInputV1|ActualPaymentInputV1" \
+  docs/customer_payment_reconciliation_agent/MODELS.md \
+  docs/customer_payment_reconciliation_agent/DEFINITIONS.md
+rg -n "EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD|0\\.80|NEEDS_REVIEW" \
+  docs/customer_payment_reconciliation_agent/CONFIG.md \
+  docs/customer_payment_reconciliation_agent/SPEC.md \
+  docs/customer_payment_reconciliation_agent/TESTING.md
+rg -n "Auth, tenant context|Redis, Ollama|workers, frontend|remain out of" \
+  docs/customer_payment_reconciliation_agent/PLAN.md
+rg -n "only foundation routes|/health|FastAPI" \
+  backend/app/main.py backend/README.md
 ```
 
 Multi-tenant coverage: N/A because Milestone 1 is intentionally non-tenantized.
@@ -99,6 +111,13 @@ Tenant-aware test cases: N/A because tenant behavior is deferred.
 
 Expected outcome: the docs name the Base API contract, the threshold is
 resolved, and future-scope services remain deferred.
+
+## What You Can Run After This Phase
+
+Run the local commands above from the repository root. They should prove that
+the Base API contract and Gate A threshold live in owner docs, future services
+remain deferred by [../PLAN.md](../PLAN.md), and the backend is still only the
+foundation app shell.
 
 ## Rollout Plan and Testing in QA and Staging
 
@@ -138,12 +157,18 @@ Data setup or migration steps: none.
 
 ## Summary of Changes
 
-- [../API.md](../API.md) (verify): Confirms L1 Base API contract ownership.
-- [../MODELS.md](../MODELS.md) (verify): Confirms L2 storage ownership.
-- [../DEFINITIONS.md](../DEFINITIONS.md) (verify): Confirms L3 interface ownership.
-- [../CONFIG.md](../CONFIG.md) (verify): Confirms L4 threshold ownership.
-- [../SPEC.md](../SPEC.md) (verify): Confirms L5 no-LLM flow ownership.
-- [../TESTING.md](../TESTING.md) (verify): Confirms L6 test-scope ownership.
+- [../API.md](../API.md) (modify):
+  Freezes L1 Base API contract ownership.
+- [../MODELS.md](../MODELS.md) (modify):
+  Freezes L2 storage ownership for the Base API subset.
+- [../DEFINITIONS.md](../DEFINITIONS.md) (modify):
+  Freezes L3 interface ownership for services, repositories, and functions.
+- [../CONFIG.md](../CONFIG.md) (modify):
+  Freezes L4 threshold ownership for Gate A.
+- [../SPEC.md](../SPEC.md) (modify):
+  Freezes L5 no-LLM Base API flow ownership.
+- [../TESTING.md](../TESTING.md) (modify):
+  Freezes L6 Milestone 1 test-scope ownership.
 
 ## Code Generation Instructions
 
@@ -157,11 +182,11 @@ no production code generation.
 | ID | Category | Source | Pushed to (owner file) | Status |
 |----|----------|--------|------------------------|--------|
 | L1 | inherited | [../PLAN.md](../PLAN.md#milestone-1-base-api-development) | [../API.md](../API.md#base-api-milestone-contract) | resolved |
-| L2 | inherited | [../PLAN.md](../PLAN.md#m12-database-toolkit-and-minimal-case-storage) | [../MODELS.md](../MODELS.md#base-api-persistence-model) | resolved |
-| L3 | inherited | [../PLAN.md](../PLAN.md#m13-validation-and-reconciliation-core) | [../DEFINITIONS.md](../DEFINITIONS.md#base-api-interfaces) | resolved |
+| L2 | inherited | [../PLAN.md](../PLAN.md#milestone-1-base-api-development) owner-doc freeze row | [../MODELS.md](../MODELS.md#base-api-persistence-model) | resolved |
+| L3 | inherited | [../PLAN.md](../PLAN.md#milestone-1-base-api-development) owner-doc freeze row | [../DEFINITIONS.md](../DEFINITIONS.md#base-api-interfaces) | resolved |
 | L4 | new-durable | Gate A threshold | [../CONFIG.md](../CONFIG.md#extraction_review_confidence_threshold) | pushed |
 | L5 | inherited | [../SPEC.md](../SPEC.md#milestone-1-base-api-no-llm-flow) | [../SPEC.md](../SPEC.md#milestone-1-base-api-no-llm-flow) | resolved |
 | L6 | inherited | [../TESTING.md](../TESTING.md#milestone-1-base-api-tests) | [../TESTING.md](../TESTING.md#milestone-1-base-api-tests) | resolved |
-| L7 | assumption | Current backend is app shell only | -- | verified in code |
+| L7 | assumption | Current backend is app shell only | [../../../backend/app/main.py](../../../backend/app/main.py) | verified by read-only spot-check |
 
 </details>
