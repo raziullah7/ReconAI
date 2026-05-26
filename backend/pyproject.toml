@@ -4,8 +4,11 @@ version = "0.1.0"
 description = "FastAPI backend foundation for ReconAI."
 requires-python = ">=3.14"
 dependencies = [
+  "alembic>=1.17",
   "fastapi[standard]>=0.115.0",
+  "psycopg[binary]>=3.2",
   "pydantic-settings>=2.7.0",
+  "sqlalchemy>=2.0",
 ]
 
 [dependency-groups]

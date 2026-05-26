@@ -24,7 +24,7 @@ docker compose up -d postgres
 Then start the backend from this folder:
 
 ```bash
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
+DATABASE_URL=postgresql+psycopg://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
 ```
 
 Health check:
