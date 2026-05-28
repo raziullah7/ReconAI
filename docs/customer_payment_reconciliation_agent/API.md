@@ -89,6 +89,7 @@ interface ReconciliationDecisionV1 {
   currency: CurrencyCode | null;
   reason: string;
   needs_human_review: boolean;
+  confidence: number;
 }
 
 interface ReconciliationCaseResponseV1 {

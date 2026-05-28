@@ -38,6 +38,8 @@ Validation tests:
   for low-confidence data, and unsupported `payment_type`.
 - Accept an `ActualPaymentInputV1` fixture with minor-unit money and matching
   currency.
+- Route supplied actual payment evidence with missing amount or currency to
+  `NEEDS_REVIEW` during decision-making.
 
 Decision tests:
 
@@ -46,14 +48,24 @@ Decision tests:
   explicitly partial-like, then returns `PARTIAL_PAYMENT`.
 - Paid amount above agreed amount returns `OVERPAID`.
 - Missing actual payment returns `PAYMENT_NOT_FOUND`.
-- Confidence below `0.80`, extraction review flag, missing agreed amount, or
-  currency mismatch returns `NEEDS_REVIEW`.
+- Confidence below `0.80`, extraction review flag, missing agreed amount,
+  incomplete actual payment evidence, or currency mismatch returns
+  `NEEDS_REVIEW`.
+- Difference is always `paid_amount_minor - agreed_amount_minor` when both
+  values exist.
 
 Persistence tests:
 
 - Repository creates a case with extraction and payment snapshots.
 - Repository lists cases in newest-first order.
 - Repository fetches one case by ID and returns not-found for an unknown ID.
+
+Service tests:
+
+- Service create validates input, computes a decision, persists snapshots, and
+  returns a response model.
+- Service list and get map repository projections to API response models without
+  adding HTTP behavior.
 
 API tests:
 

@@ -7,9 +7,9 @@ only PostgreSQL, the backend runs locally with uv, and the frontend is deferred.
 
 ## Current Status
 
-- Current phase focus: backend-first local development foundation.
+- Current phase focus: Milestone 1 Base API development.
 - Docker scope: PostgreSQL only.
-- Backend scope: FastAPI app shell with health endpoint.
+- Backend scope: FastAPI app shell, database toolkit, migration, and Base API repository.
 - Frontend scope: intentionally deferred until backend APIs are useful.
 - Deferred services: frontend scaffold, Redis, Ollama, background workers,
   backend Docker image, frontend Docker image, transcription, reconciliation,
@@ -59,7 +59,9 @@ From the backend folder, install and run the backend:
 ```bash
 cd backend
 uv sync
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
+cp .env.example .env
+uv run alembic upgrade head
+uv run fastapi dev --host 127.0.0.1 --port 8000
 ```
 
 Health check:
