@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.core.config import load_settings
+from app.core.config import Settings, load_settings
 
 
 def test_settings_require_only_database_url(
@@ -16,6 +16,8 @@ def test_settings_require_only_database_url(
     Assertions:
         - `load_settings.cache_clear()` is called before and after
           environment mutation so cached settings cannot leak between tests.
+        - Env-file loading is disabled for this test so local developer `.env`
+          files do not affect the missing `DATABASE_URL` path.
         - Missing `DATABASE_URL` raises a validation error.
         - Redis and AI worker settings are not required in Phase 1.
         - A valid PostgreSQL URL is enough to load settings.
@@ -26,6 +28,7 @@ def test_settings_require_only_database_url(
     monkeypatch.delenv("OLLAMA_BASE_URL", raising=False)
     monkeypatch.delenv("STORAGE_ROOT", raising=False)
     monkeypatch.delenv("WORKER_CONCURRENCY", raising=False)
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
 
     with pytest.raises(ValidationError) as exc_info:
         load_settings()

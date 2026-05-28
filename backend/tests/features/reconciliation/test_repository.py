@@ -64,7 +64,7 @@ def test_database_engine_uses_settings_database_url() -> None:
     Assertions:
         The engine preserves the configured URL and uses the psycopg driver.
     """
-    settings = Settings(database_url=LOCAL_DATABASE_URL)
+    settings = Settings(DATABASE_URL=LOCAL_DATABASE_URL)
 
     engine = get_engine(settings.database_url)
 

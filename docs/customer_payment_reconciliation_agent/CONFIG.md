@@ -33,10 +33,11 @@ Start the database from the repo root:
 docker compose up -d postgres
 ```
 
-Start the backend from `backend/`:
+Apply migrations and start the backend from `backend/`:
 
 ```bash
 uv sync
+DATABASE_URL=postgresql+psycopg://reconai:reconai@localhost:5432/reconai uv run alembic upgrade head
 DATABASE_URL=postgresql+psycopg://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
 ```
 
