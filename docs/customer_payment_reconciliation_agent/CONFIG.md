@@ -14,10 +14,12 @@ Purpose: PostgreSQL connection string for the local backend.
 Current default for local development:
 
 ```bash
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai
+DATABASE_URL=postgresql+psycopg://reconai:reconai@localhost:5432/reconai
 ```
 
-Validation: must use a PostgreSQL scheme.
+Validation: must use a PostgreSQL SQLAlchemy scheme. Milestone 1 database
+phases use psycopg 3, so local SQLAlchemy/Alembic URLs use
+`postgresql+psycopg://`.
 
 Runtime: restart the backend after changing it.
 
@@ -31,11 +33,12 @@ Start the database from the repo root:
 docker compose up -d postgres
 ```
 
-Start the backend from `backend/`:
+Apply migrations and start the backend from `backend/`:
 
 ```bash
 uv sync
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
+DATABASE_URL=postgresql+psycopg://reconai:reconai@localhost:5432/reconai uv run alembic upgrade head
+DATABASE_URL=postgresql+psycopg://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
 ```
 
 ## Planned Milestone 1 Configuration

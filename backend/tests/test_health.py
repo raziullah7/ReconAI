@@ -8,7 +8,7 @@ from app.main import create_app
 @pytest.fixture
 def client() -> TestClient:
     settings = Settings(
-        database_url="postgresql://reconai:reconai@localhost:5432/reconai",
+        DATABASE_URL="postgresql://reconai:reconai@localhost:5432/reconai",
     )
     return TestClient(create_app(settings))
 
