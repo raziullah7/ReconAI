@@ -10,33 +10,56 @@ This file owns typed interfaces and function/class contracts. API payloads live 
 Milestone 1 uses these names before the target tenant/auth/service surface is
 introduced.
 
+### Backend Layer Responsibilities
+
+- Router layer: FastAPI route handlers parse HTTP inputs, call injected
+  services, map expected not-found or validation failures to API errors, and do
+  not compute reconciliation decisions.
+- Service layer: application services validate request models, call pure domain
+  functions, coordinate repositories, and return API response models.
+- Repository layer: repositories own SQLAlchemy queries and map database rows to
+  stored projections without HTTP, FastAPI, or business-rule decisions.
+- Domain layer: pure functions, dataclasses, enums, and deterministic
+  reconciliation rules that do not import FastAPI or SQLAlchemy sessions.
+- Schema layer: Pydantic request and response models that match [API.md](API.md).
+- Dependency layer: FastAPI dependency functions compose settings, sessions,
+  repositories, and services for routers.
+
 ### Types
 
 - `AgreementExtractionInputV1`: Pydantic request model matching [API.md](API.md).
 - `ActualPaymentInputV1`: Pydantic request model matching [API.md](API.md).
-- `ReconciliationCaseCreateV1`: application input that combines optional
-  references, source text, extraction, and actual payment.
+- `ReconciliationCaseCreateRequestV1`: Base API request input that combines
+  optional references, source text, extraction, and actual payment.
+- `ReconciliationCaseCreateV1`: repository input that stores validated request
+  snapshots and optional references.
 - `ValidatedAgreementExtraction`: normalized agreement fields accepted by the
   backend after schema validation.
 - `ValidatedActualPayment`: normalized payment evidence accepted by the backend.
-- `ReconciliationDecisionV1`: status, amounts, difference, currency, reason, and
-  review flag returned by the pure decision function.
+- `ReconciliationDecisionV1`: status, amounts, difference, currency, reason,
+  review flag, and confidence returned by the pure decision function.
 - `BaseReconciliationCase`: stored case projection matching [MODELS.md](MODELS.md).
 
 ### Pure Functions
 
-- `validate_agreement_extraction_input(input: AgreementExtractionInputV1) -> ValidatedAgreementExtraction`
+- `validate_agreement_extraction_input(input: AgreementExtractionInputV1, confidence_threshold: float) -> ValidatedAgreementExtraction`
   - Rejects malformed LLM-shaped output before any database write.
+  - Requires evidence text for review-prone extractions.
   - Does not call the LLM.
 
 - `validate_actual_payment_input(input: ActualPaymentInputV1 | None) -> ValidatedActualPayment | None`
   - Normalizes manually supplied payment evidence.
   - Treats missing payment evidence as a valid input for `PAYMENT_NOT_FOUND`.
 
-- `decide_base_reconciliation(extraction: ValidatedAgreementExtraction, actual_payment: ValidatedActualPayment | None) -> ReconciliationDecisionV1`
+- `decide_base_reconciliation(extraction: ValidatedAgreementExtraction, actual_payment: ValidatedActualPayment | None, confidence_threshold: float) -> ReconciliationDecisionV1`
   - Applies deterministic rules in a fixed order.
   - Gives review-safe output when confidence is low, required agreement fields
     are missing, the extraction asks for human review, or currencies conflict.
+
+### Configuration
+
+- `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD`: backend setting used by Base API
+  validation and decision code. Default for Milestone 1 is `0.80`.
 
 ### Repository Port
 
@@ -47,9 +70,10 @@ introduced.
 
 ### Application Service
 
-- `BaseReconciliationCaseService` (class): validates input, computes the
-  decision, persists the case, and returns the API response model.
-  - `create_case(input: ReconciliationCaseCreateV1) -> ReconciliationCaseResponseV1`
+- `BaseReconciliationCaseService` (class): validates Base API request input,
+  computes the decision, persists the case, and maps repository projections to
+  API response models.
+  - `create_case(input: ReconciliationCaseCreateRequestV1) -> ReconciliationCaseResponseV1`
   - `list_cases(status: ReconciliationStatus | None, limit: int, offset: int) -> list[ReconciliationCaseListItemV1]`
   - `get_case(case_id: UUID) -> ReconciliationCaseResponseV1 | None`
 

@@ -38,6 +38,8 @@ Validation tests:
   for low-confidence data, and unsupported `payment_type`.
 - Accept an `ActualPaymentInputV1` fixture with minor-unit money and matching
   currency.
+- Route supplied actual payment evidence with missing amount or currency to
+  `NEEDS_REVIEW` during decision-making.
 
 Decision tests:
 
@@ -46,8 +48,11 @@ Decision tests:
   explicitly partial-like, then returns `PARTIAL_PAYMENT`.
 - Paid amount above agreed amount returns `OVERPAID`.
 - Missing actual payment returns `PAYMENT_NOT_FOUND`.
-- Low confidence below the M1.1 threshold, extraction review flag, missing
-  agreed amount, or currency mismatch returns `NEEDS_REVIEW`.
+- Confidence below `0.80`, extraction review flag, missing agreed amount,
+  incomplete actual payment evidence, or currency mismatch returns
+  `NEEDS_REVIEW`.
+- Difference is always `paid_amount_minor - agreed_amount_minor` when both
+  values exist.
 
 Persistence tests:
 
@@ -55,10 +60,28 @@ Persistence tests:
 - Repository lists cases in newest-first order.
 - Repository fetches one case by ID and returns not-found for an unknown ID.
 
+Service tests:
+
+- Service create validates input, computes a decision, persists snapshots, and
+  returns a response model.
+- Service list and get map repository projections to API response models without
+  adding HTTP behavior.
+
+Structure-alignment tests:
+
+- Import the moved reconciliation modules through the final top-level layer
+  paths.
+- Verify dependency composition can build the reconciliation service from
+  settings, a session-backed repository, and the configured confidence
+  threshold.
+- Keep these tests narrow; broad folder-shape assertions are only acceptable
+  while structure alignment itself is the phase deliverable.
+
 API tests:
 
 - `POST /v1/reconciliation-cases` persists and returns the computed decision.
-- `GET /v1/reconciliation-cases` returns stored case summaries.
+- `GET /v1/reconciliation-cases` returns stored case summaries and honors
+  `status`, `limit`, and `offset` query parameters.
 - `GET /v1/reconciliation-cases/{case_id}` returns the stored detail.
 - Invalid payloads use the canonical error envelope from [API.md](API.md).
 

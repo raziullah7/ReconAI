@@ -79,7 +79,7 @@ These gates remain before later domain phases are finalized:
 
 | Milestone | Title | Main Outcome | Review Before Code | Can Run Afterward |
 | --- | --- | --- | --- | --- |
-| 0 | Current Foundation | DB-only Compose, uv backend env, minimal READMEs, current docs | Completed in Phase 1 review path | backend pytest |
+| 0 | Current Foundation | DB-only Compose, uv backend env, minimal READMEs, current docs | Completed foundation summary | backend pytest |
 | 1 | Base API Development | Create, list, and fetch persisted reconciliation cases from LLM-shaped input | `@spec-reviewer`, `@doc-reviewer`, `@phase-reviewer` | backend API tests and local `/v1/reconciliation-cases` |
 | 2 | Base Frontend Development | First UI submits and displays the stable Base API contract | `@doc-reviewer`, `@phase-reviewer` | frontend dev server against Base API |
 | 3 | LLM Integration | Local LLM adapter emits `AgreementExtractionInputV1` for the same backend path | `@spec-reviewer`, `@phase-reviewer` | mocked and local LLM extraction checks |
@@ -92,7 +92,7 @@ Purpose: make local backend development understandable before domain code lands.
 Delivered scope:
 
 - `compose.yml` declares PostgreSQL only.
-- `.env.example` contains the local PostgreSQL URL only.
+- `backend/.env.example` contains the local PostgreSQL URL only.
 - `backend/README.md` documents uv setup, backend run, health check, and tests.
 - `frontend/README.md` documents that frontend setup is deferred.
 - Backend tests are limited to settings, Compose contract, and health endpoint.
@@ -100,82 +100,32 @@ Delivered scope:
 No frontend app, Redis, Ollama, worker, Makefile, tenant context, auth, database
 migrations, or reconciliation behavior belongs in this milestone.
 
+
 ## Milestone 1: Base API Development
 
 Purpose: make the backend useful enough for a later frontend while keeping the
 LLM mocked or manually supplied.
 
-### M1.1 Contract Docs And Review
+Detailed phase plans live in
+[milestone-1-base-api-development/](milestone-1-base-api-development/).
 
-Docs-only deliverable. Update and review these owning files before code:
+| Order | Phase | Main Outcome |
+| --- | --- | --- |
+| 1 | [M1.1 Contract Docs And Review](milestone-1-base-api-development/PHASE-M1.1-CONTRACT-DOCS-AND-REVIEW.md) | Freeze owner docs and resolve Gate A. |
+| 2 | [M1.2 Database Toolkit And Minimal Case Storage](milestone-1-base-api-development/PHASE-M1.2-DATABASE-TOOLKIT-AND-MINIMAL-CASE-STORAGE.md) | Add DB tooling, migration, table, and repository. |
+| 3 | [M1.3 Validation And Reconciliation Core](milestone-1-base-api-development/PHASE-M1.3-VALIDATION-AND-RECONCILIATION-CORE.md) | Add validation, decisions, and service behavior. |
+| 4 | [M1.4 Backend Layer Structure Alignment](milestone-1-base-api-development/PHASE-M1.4-BACKEND-LAYER-STRUCTURE-ALIGNMENT.md) | Align backend folders around router, service, repository, domain, schema, and dependency boundaries before HTTP endpoints. |
+| 5 | [M1.5 Base API Endpoints](milestone-1-base-api-development/PHASE-M1.5-BASE-API-ENDPOINTS.md) | Expose create/list/detail endpoints. |
 
-- [API.md](API.md): `AgreementExtractionInputV1`, `ActualPaymentInputV1`,
-  create/list/detail endpoints, and response shape.
-- [MODELS.md](MODELS.md): minimal stored reconciliation case and snapshots.
-- [DEFINITIONS.md](DEFINITIONS.md): validation, decision, service, and
-  repository interfaces.
-- [SPEC.md](SPEC.md): no-LLM backend flow and later LLM replacement path.
-- [TESTING.md](TESTING.md): focused tests for validation, decisions,
-  persistence, and API behavior.
+Milestone 1 boundaries:
 
-Exit criteria:
-
-- `@spec-reviewer` finds no blocking mismatch across SPEC/API/MODELS/
-  DEFINITIONS/TESTING.
-- `@doc-reviewer` confirms PLAN and PHASE boundaries are clear.
-- Gate A is resolved to a numeric threshold, or the Base API decision rules explicitly remove threshold-based review routing.
-- No implementation code changes are included in this deliverable.
-
-### M1.2 Database Toolkit And Minimal Case Storage
-
-Implement the smallest database foundation needed for stored reconciliation
-cases.
-
-Scope:
-
-- Database session/dependency structure.
-- Migration tooling.
-- Minimal `reconciliation_cases` table described in [MODELS.md](MODELS.md).
-- Repository create/list/get behavior.
-
-Out of scope:
-
-- Auth, tenant context, customers, payments table, workers, Redis, Ollama,
-  frontend, import/export.
-
-### M1.3 Validation And Reconciliation Core
-
-Implement the pure backend rules.
-
-Scope:
-
-- Validate `AgreementExtractionInputV1`.
-- Validate `ActualPaymentInputV1`.
-- Compute deterministic reconciliation status, difference, reason, and review
-  flag.
-- Store the original extraction and payment snapshots with the case.
-
-Out of scope:
-
-- Calling a real LLM.
-- Matching against a payment ledger.
-- Manual review workflow.
-
-### M1.4 Base API Endpoints
-
-Expose the stored base behavior over HTTP.
-
-Scope:
-
-- `POST /v1/reconciliation-cases`.
-- `GET /v1/reconciliation-cases`.
-- `GET /v1/reconciliation-cases/{case_id}`.
-- FastAPI request/response models matching [API.md](API.md).
-
-Out of scope:
-
-- Tenant path prefixes, JWT auth, idempotency records, pagination cursors, and
-  target product endpoints. Those return in later reviewed slices.
+- `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD` is `0.80`.
+- Base API paths are local and non-tenantized.
+- List pagination uses `limit` and `offset` for Milestone 1 only.
+- `MULTIPLE_MATCHES_FOUND` is deferred until payment-ledger matching exists.
+- Auth, tenant context, idempotency records, cursor pagination, Redis, Ollama,
+  workers, frontend, CSV import, and payment-ledger matching remain out of
+  scope.
 
 ## Milestone 2: Base Frontend Development
 

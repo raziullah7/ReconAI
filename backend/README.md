@@ -1,6 +1,6 @@
 # Backend
 
-Minimal FastAPI backend setup for the current phase.
+FastAPI backend for the Milestone 1 Base API.
 
 ## Setup
 
@@ -13,6 +13,12 @@ uv sync
 The virtual environment lives at `.venv/` inside this folder and should stay
 untracked.
 
+Create local backend settings:
+
+```bash
+cp .env.example .env
+```
+
 ## Run
 
 Start Postgres from the repo root:
@@ -21,16 +27,28 @@ Start Postgres from the repo root:
 docker compose up -d postgres
 ```
 
+Apply migrations from this folder:
+
+```bash
+uv run alembic upgrade head
+```
+
 Then start the backend from this folder:
 
 ```bash
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
+uv run fastapi dev --host 127.0.0.1 --port 8000
 ```
 
 Health check:
 
 ```bash
 curl http://127.0.0.1:8000/health
+```
+
+Base API smoke check:
+
+```bash
+curl http://127.0.0.1:8000/v1/reconciliation-cases
 ```
 
 ## Test

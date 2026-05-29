@@ -7,17 +7,20 @@
 
 ### DATABASE_URL
 
-Type: environment variable.
+Type: backend environment variable.
 
 Purpose: PostgreSQL connection string for the local backend.
 
-Current default for local development:
+Current local example settings live in `backend/.env.example`:
 
 ```bash
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai
+DATABASE_URL=postgresql+psycopg://reconai:reconai@localhost:5432/reconai
+EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD=0.80
 ```
 
-Validation: must use a PostgreSQL scheme.
+Validation: must use a PostgreSQL SQLAlchemy scheme. Milestone 1 database
+phases use psycopg 3, so local SQLAlchemy/Alembic URLs use
+`postgresql+psycopg://`.
 
 Runtime: restart the backend after changing it.
 
@@ -31,25 +34,27 @@ Start the database from the repo root:
 docker compose up -d postgres
 ```
 
-Start the backend from `backend/`:
+Create `backend/.env`, apply migrations, and start the backend from `backend/`:
 
 ```bash
 uv sync
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
+cp .env.example .env
+uv run alembic upgrade head
+uv run fastapi dev --host 127.0.0.1 --port 8000
 ```
-
-## Planned Milestone 1 Configuration
 
 ### EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD
 
-Type: environment variable.
+Type: backend environment variable.
 
 Purpose: numeric threshold for routing low-confidence agreement extractions to
 `NEEDS_REVIEW` during Base API decision-making.
 
-Current status: not required by the Phase 1 foundation app. M1.1 must select the
-value, or remove threshold-based review routing from the Base API rules, before
-M1.3 validation and reconciliation code starts.
+Default for Milestone 1: `0.80`. Values below `0.80` route the case to
+`NEEDS_REVIEW`; values equal to or above `0.80` may be automatically
+decided when the rest of the extraction and payment evidence is valid.
+
+Current status: introduced by M1.3 validation and decision implementation.
 
 Runtime: restart the backend after changing it once the Base API phase
 introduces this setting.
@@ -72,11 +77,10 @@ in the current foundation phase.
 | `RECONAI_PROCESSING_ENABLED` | Worker runtime phase | There is no processing pipeline yet. |
 | `RECONAI_NOTIFICATIONS_ENABLED` | Notification phase, if kept in scope | Notifications are not in the early build. |
 | `RECONAI_EXPORTS_ENABLED` | Dashboard/export phase | Exports are not implemented yet. |
-| `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD` | Base API validation/decision phase | Gate A must choose the value before validation code starts; it is not required by Phase 1. |
 
 ## Open Questions
 
-- Confirm the extraction confidence threshold before implementing Base API
-  validation and later local AI review routing.
+- Revisit the `0.80` extraction confidence threshold after real local LLM
+  fixture data exists.
 - Confirm the local LLM model before adding Ollama or worker sizing docs.
 - Confirm CSV import columns before payment import is planned.

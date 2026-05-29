@@ -66,6 +66,16 @@ The target system is a monorepo with `frontend/`, `backend/`, and `docs/`. The c
 - Review service: supports manual review actions and recalculation after payment linking.
 - Audit service: records system and user actions with tenant, user, entity, action, and before/after context.
 
+### Backend Layer Map
+
+Milestone 1 uses a lightweight version of the studied workforce-one FastAPI
+layout: route modules stay thin, application services orchestrate use cases,
+repositories own persistence, domain modules own pure decision logic, schemas
+own Pydantic API models, and dependency modules compose request-scoped objects.
+The current project should not copy workforce-one's larger auth, tenant,
+events, task-engine, Neo4j, Redis, or observability surface until later phases
+need those capabilities.
+
 ## 6. Data Architecture
 
 See [MODELS.md](MODELS.md) for data architecture.

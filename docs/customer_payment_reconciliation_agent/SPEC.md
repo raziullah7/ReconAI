@@ -40,15 +40,18 @@ Flow:
 Decision order:
 
 1. If extraction validation fails, return `ValidationFailed` before persistence.
-2. If `needs_human_review` is true, confidence is below the threshold selected in M1.1,
-   or required agreement fields are missing, create a `NEEDS_REVIEW` decision.
+2. If `needs_human_review` is true, confidence is below `0.80`, or required
+   agreement fields are missing, create a `NEEDS_REVIEW` decision.
 3. If no actual payment is supplied, create `PAYMENT_NOT_FOUND`.
-4. If currencies conflict, create `NEEDS_REVIEW`.
-5. If paid amount equals agreed amount, create `RECONCILED`.
-6. If paid amount is below agreed amount and payment type is `ADVANCE`,
+4. If actual payment is supplied but amount or currency is missing, create
+   `NEEDS_REVIEW`.
+5. If currencies conflict, create `NEEDS_REVIEW`.
+6. Compute `difference_minor` as paid amount minus agreed amount.
+7. If paid amount equals agreed amount, create `RECONCILED`.
+8. If paid amount is below agreed amount and payment type is `ADVANCE`,
    `PARTIAL_PAYMENT`, or `INSTALLMENT`, create `PARTIAL_PAYMENT`.
-7. If paid amount is below agreed amount, create `UNDERPAID`.
-8. If paid amount is above agreed amount, create `OVERPAID`.
+9. If paid amount is below agreed amount, create `UNDERPAID`.
+10. If paid amount is above agreed amount, create `OVERPAID`.
 
 The LLM integration milestone replaces the fixture/manual source of
 `AgreementExtractionInputV1`; it does not replace backend validation or backend
@@ -59,7 +62,7 @@ status decisions.
 ### Component: Request Context and Authorization
 
 **Purpose**: Resolve tenant and user context at the API boundary and enforce RBAC.  
-**Location**: `backend/app/core/context`, `backend/app/core/auth`, `backend/app/api/dependencies`.  
+**Location**: `backend/app/core/context`, `backend/app/core/auth`, and `backend/app/dependencies` for request-scoped composition.
 **Interfaces**: See [DEFINITIONS.md](DEFINITIONS.md).  
 **Internal Logic**: Every request resolves `TenantContext`, `UserContext`, `RequestId`, optional `IdempotencyKey`, and an `AuthzChecker`. Services receive context explicitly instead of reading global state. Mutating API handlers reserve an idempotency record before side effects and replay the stored response for duplicate compatible requests.  
 **Error Handling**: Unauthenticated requests return `Unauthenticated`; authorized users without permission return `Forbidden`; incompatible idempotency-key reuse returns `IdempotencyConflict`.
@@ -107,7 +110,7 @@ status decisions.
 ### Component: Matching and Reconciliation
 
 **Purpose**: Find candidate payments and assign deterministic status.  
-**Location**: `backend/app/features/reconciliation`.  
+**Location**: `backend/app/domain/reconciliation/`, `backend/app/services/reconciliation.py`, and `backend/app/repositories/reconciliation.py`.
 **Interfaces**: See [DEFINITIONS.md](DEFINITIONS.md).  
 **Internal Logic**: Match by tenant, customer, phone, invoice/order reference, currency, date range, and amount similarity; then apply PRD reconciliation rules in deterministic order.  
 **Error Handling**: Missing candidates, ambiguous candidates, low confidence, and unclear payment type produce review-safe statuses instead of silent success.
@@ -242,7 +245,7 @@ No existing production API is present. After public API release, changes follow 
 
 ## 16. Technical Debt and Follow-ups
 
-- Confirm extraction confidence threshold.
+- Extraction confidence threshold is `0.80` for Milestone 1; revisit after real local LLM fixture data exists.
 - Confirm first deployment tenant mode.
 - Confirm notification scope.
 - Confirm exact CSV import columns.

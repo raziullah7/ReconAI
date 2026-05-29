@@ -1,14 +1,17 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
     """Store runtime settings required by the local app shell.
 
     What: Validates the one infrastructure URL required by the current
-        foundation: PostgreSQL.
+        foundation: PostgreSQL plus the Base API review confidence threshold.
     Why: Redis, Ollama, storage, and workers are deferred until their own
         phases, so the backend should not require those services to boot.
 
@@ -17,7 +20,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file="../.env",
+        env_file=BACKEND_DIR / ".env",
         extra="ignore",
         populate_by_name=True,
     )
@@ -26,6 +29,12 @@ class Settings(BaseSettings):
         default="",
         alias="DATABASE_URL",
         validate_default=True,
+    )
+    extraction_review_confidence_threshold: float = Field(
+        default=0.80,
+        alias="EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD",
+        ge=0,
+        le=1,
     )
     service_name: str = "reconai-backend"
     app_version: str = "0.1.0"

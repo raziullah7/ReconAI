@@ -3,6 +3,8 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 
 from app.core.config import Settings, load_settings
+from app.routers import reconciliation_cases
+from app.routers.errors import register_error_handlers
 
 
 async def health(
@@ -27,23 +29,25 @@ async def health(
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    """Create the FastAPI application for the Phase 1 shell.
+    """Create the FastAPI application for the Base API.
 
-    What: Registers metadata, dependency overrides, and the health route.
-    Why: Tests and development commands need a repeatable app factory before
-        domain routers exist.
+    What: Registers metadata, dependency overrides, error handlers, health
+        route, and reconciliation routes.
+    Why: Tests and development commands need a repeatable app factory for the
+        backend application.
 
     Args:
         settings: Optional prebuilt settings for tests. Defaults to None,
             which loads settings from the environment.
 
     Returns:
-        Configured application with only foundation routes.
+        Configured application with health and Base API routes.
 
     States / Side Effects:
         Reads cached settings when no explicit settings object is supplied.
     """
     application = FastAPI(title="ReconAI", version="0.1.0")
+    register_error_handlers(application)
 
     if settings is not None:
 
@@ -53,6 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         application.dependency_overrides[load_settings] = load_settings_override
 
     application.add_api_route("/health", health, methods=["GET"])
+    application.include_router(reconciliation_cases.router)
     return application
 
 
