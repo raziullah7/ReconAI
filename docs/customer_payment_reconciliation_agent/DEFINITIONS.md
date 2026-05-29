@@ -10,6 +10,21 @@ This file owns typed interfaces and function/class contracts. API payloads live 
 Milestone 1 uses these names before the target tenant/auth/service surface is
 introduced.
 
+### Backend Layer Responsibilities
+
+- Router layer: FastAPI route handlers parse HTTP inputs, call injected
+  services, map expected not-found or validation failures to API errors, and do
+  not compute reconciliation decisions.
+- Service layer: application services validate request models, call pure domain
+  functions, coordinate repositories, and return API response models.
+- Repository layer: repositories own SQLAlchemy queries and map database rows to
+  stored projections without HTTP, FastAPI, or business-rule decisions.
+- Domain layer: pure functions, dataclasses, enums, and deterministic
+  reconciliation rules that do not import FastAPI or SQLAlchemy sessions.
+- Schema layer: Pydantic request and response models that match [API.md](API.md).
+- Dependency layer: FastAPI dependency functions compose settings, sessions,
+  repositories, and services for routers.
+
 ### Types
 
 - `AgreementExtractionInputV1`: Pydantic request model matching [API.md](API.md).

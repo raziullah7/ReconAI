@@ -1,23 +1,25 @@
-# PHASE-M1.4-BASE-API-ENDPOINTS.md
+# PHASE-M1.5-BASE-API-ENDPOINTS.md
 
 ## Executive Summary
 
 This phase exposes the Base API behavior over HTTP. It adds a FastAPI router for
 creating, listing, and fetching reconciliation cases, wires canonical error
-envelopes for validation and not-found responses, and registers the router in
-the app factory.
+envelopes for validation and not-found responses through explicit exception
+handlers, and registers the router in the app factory.
 
 Expected outcome: a local client can call `/v1/reconciliation-cases` and receive
-stored backend-owned reconciliation decisions.
+stored backend-owned reconciliation decisions through the M1.4
+router-service-repository dependency structure.
 
 Assumptions:
 
-- M1.2 repository and M1.3 validation/service layers exist.
+- M1.2 repository, M1.3 validation/service behavior, and M1.4 layer
+  structure exist.
 - Milestone 1 remains unauthenticated and non-tenantized.
 - List pagination uses `limit` and `offset` only in Milestone 1.
 
-P_bottom_up: about 310 production LOC.
-T_bottom_up: about 220 test LOC.
+P_bottom_up: about 250 production LOC.
+T_bottom_up: about 180 test LOC.
 
 ## Execution Plan
 
@@ -27,7 +29,9 @@ T_bottom_up: about 220 test LOC.
   - Summary: Posts a valid create request and expects a stored case response.
   - Mocks: FastAPI `TestClient`; database fixture from M1.2.
   - Assertions: Status is 201, response includes `id`, original snapshots,
-    computed decision, and timestamps.
+    computed decision, and timestamps; the app uses
+    `get_reconciliation_case_service` rather than constructing the service
+    inside the route.
 
 - `test_get_reconciliation_cases_returns_summaries`
   - Summary: Lists stored cases with `limit` and `offset`.
@@ -43,22 +47,48 @@ T_bottom_up: about 220 test LOC.
     `{ "error": { "code", "message", "request_id" } }`.
 
 - `test_invalid_reconciliation_case_uses_error_envelope`
-  - Summary: Posts invalid payload data and expects the canonical error shape.
+  - Summary: Posts invalid Pydantic payload data and valid-shape data rejected
+    by service validation, then expects the canonical error shape.
   - Mocks: FastAPI `TestClient`.
-  - Assertions: Status is 422 or 400 according to FastAPI validation boundary,
-    and the response body uses the [../API.md](../API.md#error-envelope)
-    envelope.
+  - Assertions: Pydantic validation returns 422, service validation returns 400,
+    `error.code` is `ValidationFailed`, `error.message` is present,
+    `error.request_id` is present, and the response body uses the
+    [../API.md](../API.md#error-envelope) envelope.
 
 ### Green
 
-- Add `backend/app/api/errors.py` with an error response helper.
-- Add `backend/app/api/reconciliation_cases.py` with the Base API router.
-- Modify [../../../backend/app/main.py](../../../backend/app/main.py) to include the
-  router under `/v1/reconciliation-cases`.
+- Add `backend/app/routers/errors.py` with error response helpers and FastAPI
+  exception-handler registration for `RequestValidationError` and expected HTTP
+  errors; route handlers map service `ValueError` validation failures to the
+  same envelope with status 400.
+- Add `backend/app/routers/reconciliation_cases.py` with the Base API router.
+- Define the router prefix in the module with
+  `APIRouter(prefix="/v1/reconciliation-cases", tags=["reconciliation"])`;
+  [../../../backend/app/main.py](../../../backend/app/main.py) must call
+  `include_router(reconciliation_cases.router)` without an additional prefix.
+- Modify [../../../backend/app/main.py](../../../backend/app/main.py) to register
+  the router and error handlers using the M1.4 dependency composition.
 
-Required signatures:
+Required signatures and route shape:
 
 ```python
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, FastAPI, Query, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+from app.dependencies import get_reconciliation_case_service
+from app.domain.reconciliation.contracts import ReconciliationStatus
+from app.schemas.reconciliation import (
+    ReconciliationCaseCreateRequestV1,
+    ReconciliationCaseListItemV1,
+    ReconciliationCaseResponseV1,
+)
+from app.services.reconciliation import BaseReconciliationCaseService
+
+
 def build_error_response(
     code: str,
     message: str,
@@ -78,30 +108,91 @@ def build_error_response(
     Returns:
         dict[str, dict[str, str]]: Canonical error envelope.
     """
+
+
+def register_error_handlers(application: FastAPI) -> None:
+    """Register canonical Base API error handlers.
+
+    What: Installs handlers that convert FastAPI validation errors and expected
+        route errors into the shared error envelope.
+    Why: The API contract requires non-2xx responses to use one predictable
+        shape.
+
+    Args:
+        application: FastAPI app created by `create_app`.
+
+    States / Side Effects:
+        Mutates the FastAPI application exception-handler registry.
+    """
+
+
+router = APIRouter(prefix="/v1/reconciliation-cases", tags=["reconciliation"])
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+def create_reconciliation_case(
+    input: ReconciliationCaseCreateRequestV1,
+    service: Annotated[
+        BaseReconciliationCaseService,
+        Depends(get_reconciliation_case_service),
+    ],
+) -> ReconciliationCaseResponseV1:
+    ...
+
+
+@router.get("")
+def list_reconciliation_cases(
+    service: Annotated[
+        BaseReconciliationCaseService,
+        Depends(get_reconciliation_case_service),
+    ],
+    status_filter: Annotated[ReconciliationStatus | None, Query(alias="status")] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> dict[str, list[ReconciliationCaseListItemV1]]:
+    ...
+
+
+@router.get("/{case_id}")
+def get_reconciliation_case(
+    case_id: UUID,
+    service: Annotated[
+        BaseReconciliationCaseService,
+        Depends(get_reconciliation_case_service),
+    ],
+) -> ReconciliationCaseResponseV1:
+    ...
 ```
 
 Router pseudo code:
 
 ```text
 POST /v1/reconciliation-cases:
-    parse ReconciliationCaseCreateRequestV1
-    call BaseReconciliationCaseService.create_case
+    receive ReconciliationCaseCreateRequestV1
+    call injected BaseReconciliationCaseService.create_case
+    if service raises ValueError: return 400 ValidationFailed envelope
     return 201 ReconciliationCaseResponseV1
 
 GET /v1/reconciliation-cases:
     parse optional status, limit, offset
-    call BaseReconciliationCaseService.list_cases
+    call injected BaseReconciliationCaseService.list_cases
     return {"items": items}
 
 GET /v1/reconciliation-cases/{case_id}:
-    call BaseReconciliationCaseService.get_case
-    if missing: raise not-found with error envelope
+    call injected BaseReconciliationCaseService.get_case
+    if missing: return NotFound envelope with request_id
     return detail
+
+RequestValidationError handler:
+    return 422 ValidationFailed envelope with request_id
+
+Expected HTTP error handler:
+    return the supplied status code with NotFound or ValidationFailed envelope
 ```
 
 ### Refactor
 
-- Keep HTTP functions thin and move decision work into M1.3 service code.
+- Keep HTTP functions thin and use the M1.4 service dependency for decision work.
 - Keep Milestone 1 route paths non-tenantized.
 - Do not add auth, idempotency records, cursor pagination, frontend, workers,
   Redis, Ollama, or real LLM calls.
@@ -124,7 +215,7 @@ docker compose up -d postgres
 cd backend
 cp .env.example .env
 uv run alembic upgrade head
-uv run python -m pytest tests/features/reconciliation/test_api.py
+uv run python -m pytest tests/test_reconciliation_structure.py tests/features/reconciliation/test_api.py tests/test_health.py
 uv run fastapi dev --host 127.0.0.1 --port 8000
 curl http://127.0.0.1:8000/v1/reconciliation-cases
 uv run mypy app
@@ -135,7 +226,8 @@ Multi-tenant coverage: N/A because Base API is explicitly non-tenantized.
 
 Tenant-aware test cases: N/A because tenant paths are deferred.
 
-Expected outcome: create/list/detail API tests pass and `/health` still works.
+Expected outcome: structure, create/list/detail API, validation-envelope, and
+`/health` tests pass.
 
 ## Rollout Plan and Testing in QA and Staging
 
@@ -186,9 +278,11 @@ Data setup or migration steps: none beyond M1.2.
 
 ## Summary of Changes
 
-- `backend/app/api/errors.py` (new): Adds canonical error envelope helper for L1.
-- `backend/app/api/reconciliation_cases.py` (new): Adds create/list/detail routes for L2.
-- [../../../backend/app/main.py](../../../backend/app/main.py) (modify): Registers the Base API router for L3.
+- `backend/app/routers/errors.py` (new): Adds canonical error envelope helper
+  and exception-handler registration for L1.
+- `backend/app/routers/reconciliation_cases.py` (new): Adds create/list/detail routes for L2.
+- [../../../backend/app/main.py](../../../backend/app/main.py) (modify): Registers
+  the Base API router and error handlers for L3.
 - `backend/tests/features/reconciliation/test_api.py` (new): Adds endpoint tests for L4.
 
 ## Code Generation Instructions
@@ -203,9 +297,10 @@ docstrings, commits, and change-summary rules apply unchanged.
 |----|----------|--------|------------------------|--------|
 | L1 | inherited | [../API.md](../API.md#base-api-endpoints) | -- | resolved |
 | L2 | inherited | [../DEFINITIONS.md](../DEFINITIONS.md#application-service) | -- | resolved |
-| L3 | inherited | [../PLAN.md](../PLAN.md#m14-base-api-endpoints) | -- | resolved |
+| L3 | inherited | [../PLAN.md](../PLAN.md#milestone-1-base-api-development) M1.5 table row | -- | resolved |
 | L4 | inherited | [../TESTING.md](../TESTING.md#milestone-1-base-api-tests) | -- | resolved |
 | L5 | phase-local | Error envelope helper needed by endpoint errors | -- | phase-local |
-| L6 | assumption | M1.2 and M1.3 are implemented first | -- | open |
+| L6 | inherited | [../PLAN.md](../PLAN.md#milestone-1-base-api-development) M1.2, M1.3, and M1.4 order | -- | resolved |
+| L7 | inherited | [PHASE-M1.4-BACKEND-LAYER-STRUCTURE-ALIGNMENT.md](PHASE-M1.4-BACKEND-LAYER-STRUCTURE-ALIGNMENT.md) `get_reconciliation_case_service` dependency | -- | resolved |
 
 </details>

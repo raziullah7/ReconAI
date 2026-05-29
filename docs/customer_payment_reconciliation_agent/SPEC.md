@@ -62,7 +62,7 @@ status decisions.
 ### Component: Request Context and Authorization
 
 **Purpose**: Resolve tenant and user context at the API boundary and enforce RBAC.  
-**Location**: `backend/app/core/context`, `backend/app/core/auth`, `backend/app/api/dependencies`.  
+**Location**: `backend/app/core/context`, `backend/app/core/auth`, and `backend/app/dependencies` for request-scoped composition.
 **Interfaces**: See [DEFINITIONS.md](DEFINITIONS.md).  
 **Internal Logic**: Every request resolves `TenantContext`, `UserContext`, `RequestId`, optional `IdempotencyKey`, and an `AuthzChecker`. Services receive context explicitly instead of reading global state. Mutating API handlers reserve an idempotency record before side effects and replay the stored response for duplicate compatible requests.  
 **Error Handling**: Unauthenticated requests return `Unauthenticated`; authorized users without permission return `Forbidden`; incompatible idempotency-key reuse returns `IdempotencyConflict`.
@@ -110,7 +110,7 @@ status decisions.
 ### Component: Matching and Reconciliation
 
 **Purpose**: Find candidate payments and assign deterministic status.  
-**Location**: `backend/app/features/reconciliation`.  
+**Location**: `backend/app/domain/reconciliation/`, `backend/app/services/reconciliation.py`, and `backend/app/repositories/reconciliation.py`.
 **Interfaces**: See [DEFINITIONS.md](DEFINITIONS.md).  
 **Internal Logic**: Match by tenant, customer, phone, invoice/order reference, currency, date range, and amount similarity; then apply PRD reconciliation rules in deterministic order.  
 **Error Handling**: Missing candidates, ambiguous candidates, low confidence, and unclear payment type produce review-safe statuses instead of silent success.

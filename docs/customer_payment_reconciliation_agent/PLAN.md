@@ -114,7 +114,8 @@ Detailed phase plans live in
 | 1 | [M1.1 Contract Docs And Review](milestone-1-base-api-development/PHASE-M1.1-CONTRACT-DOCS-AND-REVIEW.md) | Freeze owner docs and resolve Gate A. |
 | 2 | [M1.2 Database Toolkit And Minimal Case Storage](milestone-1-base-api-development/PHASE-M1.2-DATABASE-TOOLKIT-AND-MINIMAL-CASE-STORAGE.md) | Add DB tooling, migration, table, and repository. |
 | 3 | [M1.3 Validation And Reconciliation Core](milestone-1-base-api-development/PHASE-M1.3-VALIDATION-AND-RECONCILIATION-CORE.md) | Add validation, decisions, and service behavior. |
-| 4 | [M1.4 Base API Endpoints](milestone-1-base-api-development/PHASE-M1.4-BASE-API-ENDPOINTS.md) | Expose create/list/detail endpoints. |
+| 4 | [M1.4 Backend Layer Structure Alignment](milestone-1-base-api-development/PHASE-M1.4-BACKEND-LAYER-STRUCTURE-ALIGNMENT.md) | Align backend folders around router, service, repository, domain, schema, and dependency boundaries before HTTP endpoints. |
+| 5 | [M1.5 Base API Endpoints](milestone-1-base-api-development/PHASE-M1.5-BASE-API-ENDPOINTS.md) | Expose create/list/detail endpoints. |
 
 Milestone 1 boundaries:
 

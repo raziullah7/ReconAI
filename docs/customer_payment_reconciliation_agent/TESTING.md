@@ -67,6 +67,16 @@ Service tests:
 - Service list and get map repository projections to API response models without
   adding HTTP behavior.
 
+Structure-alignment tests:
+
+- Import the moved reconciliation modules through the final top-level layer
+  paths.
+- Verify dependency composition can build the reconciliation service from
+  settings, a session-backed repository, and the configured confidence
+  threshold.
+- Keep these tests narrow; broad folder-shape assertions are only acceptable
+  while structure alignment itself is the phase deliverable.
+
 API tests:
 
 - `POST /v1/reconciliation-cases` persists and returns the computed decision.
