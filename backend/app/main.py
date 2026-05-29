@@ -3,6 +3,8 @@ from typing import Annotated
 from fastapi import Depends, FastAPI
 
 from app.core.config import Settings, load_settings
+from app.routers import reconciliation_cases
+from app.routers.errors import register_error_handlers
 
 
 async def health(
@@ -44,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         Reads cached settings when no explicit settings object is supplied.
     """
     application = FastAPI(title="ReconAI", version="0.1.0")
+    register_error_handlers(application)
 
     if settings is not None:
 
@@ -53,6 +56,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         application.dependency_overrides[load_settings] = load_settings_override
 
     application.add_api_route("/health", health, methods=["GET"])
+    application.include_router(reconciliation_cases.router)
     return application
 
 
