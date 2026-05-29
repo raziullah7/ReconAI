@@ -173,6 +173,45 @@ def test_get_reconciliation_cases_returns_summaries(
     assert first["id"] != second["id"]
 
 
+def test_get_reconciliation_cases_filters_by_status(
+    api_client: ApiClientContext,
+) -> None:
+    """Verifies GET collection applies the documented status query filter.
+
+    Summary:
+        Lists stored cases with `status`.
+    Mocks:
+        FastAPI TestClient and seeded rows created through POST.
+    Assertions:
+        Status is 200 and only cases matching the requested reconciliation
+        status are returned.
+    """
+    reconciled = api_client.client.post(
+        "/v1/reconciliation-cases",
+        json=_valid_payload(external_reference="CALL-001"),
+    ).json()
+    payment_not_found = api_client.client.post(
+        "/v1/reconciliation-cases",
+        json=_valid_payload(
+            external_reference="CALL-002",
+            actual_payment=None,
+        ),
+    ).json()
+
+    response = api_client.client.get(
+        "/v1/reconciliation-cases",
+        params={"status": "PAYMENT_NOT_FOUND"},
+    )
+
+    body = response.json()
+
+    assert response.status_code == 200
+    assert len(body["items"]) == 1
+    assert body["items"][0]["id"] == payment_not_found["id"]
+    assert body["items"][0]["status"] == "PAYMENT_NOT_FOUND"
+    assert body["items"][0]["id"] != reconciled["id"]
+
+
 def test_get_reconciliation_case_returns_detail_or_not_found(
     api_client: ApiClientContext,
 ) -> None:

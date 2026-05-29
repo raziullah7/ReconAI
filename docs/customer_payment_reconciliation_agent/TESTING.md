@@ -80,7 +80,8 @@ Structure-alignment tests:
 API tests:
 
 - `POST /v1/reconciliation-cases` persists and returns the computed decision.
-- `GET /v1/reconciliation-cases` returns stored case summaries.
+- `GET /v1/reconciliation-cases` returns stored case summaries and honors
+  `status`, `limit`, and `offset` query parameters.
 - `GET /v1/reconciliation-cases/{case_id}` returns the stored detail.
 - Invalid payloads use the canonical error envelope from [API.md](API.md).
 

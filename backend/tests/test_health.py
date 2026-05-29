@@ -26,7 +26,7 @@ def test_health_endpoint_returns_ok(client: TestClient) -> None:
         - Response body contains `status`, `service`, and `version` so
           callers can identify the running service.
         - Response body does not include reconciliation, tenant data, or
-          worker state because Phase 1 is scaffold-only.
+          worker state because health stays limited to app metadata.
     """
     response = client.get("/health")
 

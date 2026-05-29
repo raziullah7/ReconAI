@@ -76,7 +76,7 @@ class BaseReconciliationCaseRepository:
 
         What: Reads stored cases, optionally filters by status, and applies
             limit/offset pagination.
-        Why: M1.4 list endpoints need a repository query that remains local
+        Why: Base API list endpoints need a repository query that remains local
             and non-tenantized for Milestone 1.
 
         Args:
@@ -107,7 +107,7 @@ class BaseReconciliationCaseRepository:
 
         What: Loads a single case by primary key and maps it to the repository
             projection when present.
-        Why: M1.4 detail endpoints need a not-found-safe repository lookup.
+        Why: Base API detail endpoints need a not-found-safe repository lookup.
 
         Args:
             case_id: Primary key of the case to fetch.

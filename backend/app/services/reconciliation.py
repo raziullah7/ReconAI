@@ -24,7 +24,7 @@ from app.schemas.reconciliation import (
 
 
 class BaseReconciliationCaseRepositoryProtocol(Protocol):
-    """Repository behavior required by the M1.3 service."""
+    """Repository behavior required by the Base API service."""
 
     def create(
         self,

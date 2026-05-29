@@ -87,11 +87,11 @@ T_bottom_up: about 430 test LOC.
   `backend/app/core/config.py` with default `0.80`, validate it between 0 and
   1, and add it to `backend/.env.example`.
 - Add Pydantic request/response models and validated dataclasses in
-  `backend/app/features/reconciliation/schemas.py`.
+  `backend/app/schemas/reconciliation.py`.
 - Add pure validation and decision functions in
-  `backend/app/features/reconciliation/decisions.py`.
+  `backend/app/domain/reconciliation/decisions.py`.
 - Add `BaseReconciliationCaseService` in
-  `backend/app/features/reconciliation/service.py` with create/list/get methods.
+  `backend/app/services/reconciliation.py` with create/list/get methods.
 
 Required signatures:
 
@@ -338,12 +338,12 @@ Data setup or migration steps: none beyond M1.2.
 
 - `backend/app/core/config.py` (modify): Adds the M1.3 confidence threshold for L1.
 - `backend/.env.example` (modify): Documents the default threshold for L1.
-- `backend/app/features/reconciliation/schemas.py` (new): Adds request,
+- `backend/app/schemas/reconciliation.py` (new): Adds request,
   response, validated dataclasses, `PaymentType`, and `JsonValue` contracts
   from the schema and mapping sections for L1.
-- `backend/app/features/reconciliation/decisions.py` (new): Adds the pure
+- `backend/app/domain/reconciliation/decisions.py` (new): Adds the pure
   validation and decision signatures from the Required Signatures section for L2.
-- `backend/app/features/reconciliation/service.py` (new): Adds the
+- `backend/app/services/reconciliation.py` (new): Adds the
   `BaseReconciliationCaseService` create/list/get contract and null-safe
   snapshot mapping for L3.
 - `backend/tests/test_config.py` (modify): Covers threshold settings for L4.

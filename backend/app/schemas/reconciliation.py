@@ -115,7 +115,7 @@ class ActualPaymentInputV1(_BaseSchema):
 
 
 class ReconciliationCaseCreateRequestV1(_BaseSchema):
-    """Base API request model used by the M1.3 service."""
+    """Base API request model accepted by the service and router."""
 
     external_reference: str | None = None
     customer_reference: str | None = None

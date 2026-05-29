@@ -7,13 +7,16 @@ only PostgreSQL, the backend runs locally with uv, and the frontend is deferred.
 
 ## Current Status
 
-- Current phase focus: Milestone 1 Base API development.
+- Current merge state: Milestone 1 Base API is implemented and under final
+  review before merging to `main`.
 - Docker scope: PostgreSQL only.
-- Backend scope: FastAPI app shell, database toolkit, migration, and Base API repository.
+- Backend scope: FastAPI app shell, database toolkit, Alembic migration,
+  validation and decision core, service/repository layers, and Base API
+  create/list/detail endpoints.
 - Frontend scope: intentionally deferred until backend APIs are useful.
 - Deferred services: frontend scaffold, Redis, Ollama, background workers,
-  backend Docker image, frontend Docker image, transcription, reconciliation,
-  exports.
+  backend Docker image, frontend Docker image, transcription, payment-ledger
+  matching, review workflow, dashboard, and exports.
 
 ## Delivery Workflow
 
@@ -70,6 +73,12 @@ Health check:
 curl http://127.0.0.1:8000/health
 ```
 
+Base API smoke check:
+
+```bash
+curl http://127.0.0.1:8000/v1/reconciliation-cases
+```
+
 Backend checks:
 
 ```bash
@@ -103,13 +112,13 @@ frontend setup is intentionally deferred.
 | [BDD.md](BDD.md) | Business-readable scenarios | Target behavior |
 | [ARCH.md](ARCH.md) | Architecture direction and tradeoffs | Target architecture |
 | [SPEC.md](SPEC.md) | Technical design | Target design, not fully implemented |
-| [PLAN.md](PLAN.md) | Milestone sequence and review gates | Current implementation guide |
-| [milestone-1-base-api-development/](milestone-1-base-api-development/) | Milestone 1 phase plans | Ready for review-gated implementation |
+| [PLAN.md](PLAN.md) | Milestone sequence and review gates | Milestone sequence and review gates |
+| [milestone-1-base-api-development/](milestone-1-base-api-development/) | Milestone 1 phase plans | Implemented phase history for M1 |
 | [CONFIG.md](CONFIG.md) | Runtime settings and feature flags | Split into current and deferred |
-| [TESTING.md](TESTING.md) | Test strategy by phase maturity | Small backend tests first |
-| [API.md](API.md) | Base API and target endpoint contracts | Base API contract ready for review |
-| [MODELS.md](MODELS.md) | Base persistence shape and target model | Base model contract ready for review |
-| [DEFINITIONS.md](DEFINITIONS.md) | Planned interfaces | Base interfaces ready for review |
+| [TESTING.md](TESTING.md) | Test strategy by phase maturity | Milestone 1 backend tests implemented |
+| [API.md](API.md) | Base API and target endpoint contracts | Base API implemented; target contracts documented |
+| [MODELS.md](MODELS.md) | Base persistence shape and target model | Base persistence model implemented; target model documented |
+| [DEFINITIONS.md](DEFINITIONS.md) | Planned interfaces | Base interfaces implemented; target interfaces documented |
 | [UI_UX.md](UI_UX.md) | Planned product screens and flows | Later-phase contracts |
 
 ## Folder Rules

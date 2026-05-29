@@ -1,6 +1,6 @@
 # Backend
 
-Minimal FastAPI backend setup for the current phase.
+FastAPI backend for the Milestone 1 Base API.
 
 ## Setup
 
@@ -43,6 +43,12 @@ Health check:
 
 ```bash
 curl http://127.0.0.1:8000/health
+```
+
+Base API smoke check:
+
+```bash
+curl http://127.0.0.1:8000/v1/reconciliation-cases
 ```
 
 ## Test
