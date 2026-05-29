@@ -45,7 +45,53 @@ def test_settings_require_only_database_url(
 
     settings = load_settings()
 
-    assert settings.database_url == "postgresql://reconai:reconai@localhost:5432/reconai"
+    assert (
+        settings.database_url == "postgresql://reconai:reconai@localhost:5432/reconai"
+    )
     assert not hasattr(settings, "redis_url")
+
+    load_settings.cache_clear()
+
+
+def test_settings_loads_reconciliation_threshold(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verifies the M1.3 review confidence threshold setting.
+
+    Summary:
+        Loads the default threshold and rejects values outside 0..1.
+    Mocks:
+        monkeypatch isolates process environment and disables local `.env`
+        loading.
+    Assertions:
+        The default is 0.80, explicit valid values load, and invalid values
+        raise validation errors.
+    """
+    load_settings.cache_clear()
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://reconai:reconai@localhost:5432/reconai",
+    )
+    monkeypatch.delenv("EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD", raising=False)
+
+    settings = load_settings()
+
+    assert settings.extraction_review_confidence_threshold == 0.80
+
+    load_settings.cache_clear()
+    monkeypatch.setenv("EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD", "0.91")
+
+    settings = load_settings()
+
+    assert settings.extraction_review_confidence_threshold == 0.91
+
+    load_settings.cache_clear()
+    monkeypatch.setenv("EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD", "1.01")
+
+    with pytest.raises(ValidationError) as exc_info:
+        load_settings()
+
+    assert "EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD" in str(exc_info.value)
 
     load_settings.cache_clear()

@@ -108,14 +108,13 @@ GET /v1/reconciliation-cases/{case_id}:
 
 ## Setup and Testing in Local Dev
 
-Settings and configuration: `DATABASE_URL` and
+Settings and configuration live in `backend/.env`: `DATABASE_URL` and
 `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD=0.80`.
 
-Environment variables:
+Start from the backend example file:
 
 ```bash
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai
-EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD=0.80
+cp .env.example .env
 ```
 
 Local commands:
@@ -123,9 +122,10 @@ Local commands:
 ```bash
 docker compose up -d postgres
 cd backend
+cp .env.example .env
 uv run alembic upgrade head
 uv run python -m pytest tests/features/reconciliation/test_api.py
-DATABASE_URL=postgresql://reconai:reconai@localhost:5432/reconai uv run fastapi dev --host 127.0.0.1 --port 8000
+uv run fastapi dev --host 127.0.0.1 --port 8000
 curl http://127.0.0.1:8000/v1/reconciliation-cases
 uv run mypy app
 uv run ruff check .

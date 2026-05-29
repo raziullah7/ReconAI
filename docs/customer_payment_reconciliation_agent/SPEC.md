@@ -43,12 +43,15 @@ Decision order:
 2. If `needs_human_review` is true, confidence is below `0.80`, or required
    agreement fields are missing, create a `NEEDS_REVIEW` decision.
 3. If no actual payment is supplied, create `PAYMENT_NOT_FOUND`.
-4. If currencies conflict, create `NEEDS_REVIEW`.
-5. If paid amount equals agreed amount, create `RECONCILED`.
-6. If paid amount is below agreed amount and payment type is `ADVANCE`,
+4. If actual payment is supplied but amount or currency is missing, create
+   `NEEDS_REVIEW`.
+5. If currencies conflict, create `NEEDS_REVIEW`.
+6. Compute `difference_minor` as paid amount minus agreed amount.
+7. If paid amount equals agreed amount, create `RECONCILED`.
+8. If paid amount is below agreed amount and payment type is `ADVANCE`,
    `PARTIAL_PAYMENT`, or `INSTALLMENT`, create `PARTIAL_PAYMENT`.
-7. If paid amount is below agreed amount, create `UNDERPAID`.
-8. If paid amount is above agreed amount, create `OVERPAID`.
+9. If paid amount is below agreed amount, create `UNDERPAID`.
+10. If paid amount is above agreed amount, create `OVERPAID`.
 
 The LLM integration milestone replaces the fixture/manual source of
 `AgreementExtractionInputV1`; it does not replace backend validation or backend
@@ -242,7 +245,7 @@ No existing production API is present. After public API release, changes follow 
 
 ## 16. Technical Debt and Follow-ups
 
-- Confirm extraction confidence threshold.
+- Extraction confidence threshold is `0.80` for Milestone 1; revisit after real local LLM fixture data exists.
 - Confirm first deployment tenant mode.
 - Confirm notification scope.
 - Confirm exact CSV import columns.

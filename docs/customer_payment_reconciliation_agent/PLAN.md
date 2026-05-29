@@ -92,7 +92,7 @@ Purpose: make local backend development understandable before domain code lands.
 Delivered scope:
 
 - `compose.yml` declares PostgreSQL only.
-- `.env.example` contains the local PostgreSQL URL only.
+- `backend/.env.example` contains the local PostgreSQL URL only.
 - `backend/README.md` documents uv setup, backend run, health check, and tests.
 - `frontend/README.md` documents that frontend setup is deferred.
 - Backend tests are limited to settings, Compose contract, and health endpoint.
