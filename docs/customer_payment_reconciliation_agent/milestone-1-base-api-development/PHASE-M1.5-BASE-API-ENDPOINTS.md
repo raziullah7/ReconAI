@@ -202,9 +202,10 @@ Expected HTTP error handler:
 Settings and configuration live in `backend/.env`: `DATABASE_URL` and
 `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD=0.80`.
 
-Start from the backend example file:
+Start from the backend folder and create the local `.env` file:
 
 ```bash
+cd backend
 cp .env.example .env
 ```
 
@@ -213,7 +214,6 @@ Local commands:
 ```bash
 docker compose up -d postgres
 cd backend
-cp .env.example .env
 uv run alembic upgrade head
 uv run python -m pytest tests/test_reconciliation_structure.py tests/features/reconciliation/test_api.py tests/test_health.py
 uv run fastapi dev --host 127.0.0.1 --port 8000
@@ -267,7 +267,7 @@ Data setup or migration steps: none beyond M1.2.
 |---|------|-------------|------------------|
 | 1 | Local dev multi-tenant coverage | N/A | Base API is non-tenantized. |
 | 2 | Tenant-aware test cases | N/A | Tenant routes are deferred. |
-| 3 | Per-environment feature flag state | Addressed | No feature flag; threshold is `0.80` in all environments. |
+| 3 | Per-environment feature flag state | N/A | No feature flag exists for M1.5; threshold config stays in `backend/.env`. |
 | 4 | Per-tenant production canary | N/A | No tenant model exists. |
 | 5 | Observability verification | N/A | Structured observability is deferred; smoke checks verify responses. |
 | 6 | Audit log verification | N/A | Audit logging is deferred. |
@@ -279,8 +279,10 @@ Data setup or migration steps: none beyond M1.2.
 ## Summary of Changes
 
 - `backend/app/routers/errors.py` (new): Adds canonical error envelope helper
-  and exception-handler registration for L1.
-- `backend/app/routers/reconciliation_cases.py` (new): Adds create/list/detail routes for L2.
+  and exception-handler registration for L5 and L8.
+- `backend/app/routers/reconciliation_cases.py` (new): Adds create/list/detail
+  routes for L1 and L4 while calling the L2 service methods through dependency
+  injection.
 - [../../../backend/app/main.py](../../../backend/app/main.py) (modify): Registers
   the Base API router and error handlers for L3.
 - `backend/tests/features/reconciliation/test_api.py` (new): Adds endpoint tests for L4.
@@ -301,6 +303,7 @@ docstrings, commits, and change-summary rules apply unchanged.
 | L4 | inherited | [../TESTING.md](../TESTING.md#milestone-1-base-api-tests) | -- | resolved |
 | L5 | phase-local | Error envelope helper needed by endpoint errors | -- | phase-local |
 | L6 | inherited | [../PLAN.md](../PLAN.md#milestone-1-base-api-development) M1.2, M1.3, and M1.4 order | -- | resolved |
-| L7 | inherited | [PHASE-M1.4-BACKEND-LAYER-STRUCTURE-ALIGNMENT.md](PHASE-M1.4-BACKEND-LAYER-STRUCTURE-ALIGNMENT.md) `get_reconciliation_case_service` dependency | -- | resolved |
+| L7 | assumption | Current M1.4 code exposes `get_reconciliation_case_service` from `app.dependencies` for router injection. | [../../../backend/app/dependencies.py](../../../backend/app/dependencies.py) | verified by read-only spot-check |
+| L8 | inherited | [../API.md](../API.md#error-envelope) | -- | resolved |
 
 </details>
