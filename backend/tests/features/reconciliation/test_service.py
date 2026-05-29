@@ -1,18 +1,18 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from app.features.reconciliation.contracts import (
+from app.domain.reconciliation.contracts import (
     BaseReconciliationCase,
     ReconciliationCaseCreateV1,
     ReconciliationDecisionV1,
     ReconciliationStatus,
 )
-from app.features.reconciliation.schemas import (
+from app.schemas.reconciliation import (
     ReconciliationCaseCreateRequestV1,
     ReconciliationCaseListItemV1,
     ReconciliationCaseResponseV1,
 )
-from app.features.reconciliation.service import BaseReconciliationCaseService
+from app.services.reconciliation import BaseReconciliationCaseService
 
 
 class FakeRepository:

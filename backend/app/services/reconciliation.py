@@ -1,18 +1,18 @@
 from typing import Protocol
 from uuid import UUID
 
-from app.features.reconciliation.contracts import (
+from app.domain.reconciliation.contracts import (
     BaseReconciliationCase,
     ReconciliationCaseCreateV1,
     ReconciliationDecisionV1,
     ReconciliationStatus,
 )
-from app.features.reconciliation.decisions import (
+from app.domain.reconciliation.decisions import (
     decide_base_reconciliation,
     validate_actual_payment_input,
     validate_agreement_extraction_input,
 )
-from app.features.reconciliation.schemas import (
+from app.schemas.reconciliation import (
     ActualPaymentInputV1,
     AgreementExtractionInputV1,
     PaymentType,
