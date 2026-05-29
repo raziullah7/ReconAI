@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import Connection, engine_from_config, pool
 
 from app.core.config import load_settings
-from app.features.reconciliation.models import Base
+from app.db.models.reconciliation import Base
 
 config = context.config
 

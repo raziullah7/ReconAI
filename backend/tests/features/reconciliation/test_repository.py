@@ -11,12 +11,12 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.db.session import get_engine
-from app.features.reconciliation.contracts import (
+from app.domain.reconciliation.contracts import (
     ReconciliationCaseCreateV1,
     ReconciliationDecisionV1,
     ReconciliationStatus,
 )
-from app.features.reconciliation.repository import BaseReconciliationCaseRepository
+from app.repositories.reconciliation import BaseReconciliationCaseRepository
 
 LOCAL_DATABASE_URL = "postgresql+psycopg://reconai:reconai@localhost:5432/reconai"
 

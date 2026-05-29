@@ -1,8 +1,8 @@
-from app.features.reconciliation.contracts import (
+from app.domain.reconciliation.contracts import (
     ReconciliationDecisionV1,
     ReconciliationStatus,
 )
-from app.features.reconciliation.schemas import (
+from app.schemas.reconciliation import (
     ActualPaymentInputV1,
     AgreementExtractionInputV1,
     PaymentType,

@@ -3,13 +3,13 @@ from uuid import UUID
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
-from app.features.reconciliation.contracts import (
+from app.db.models.reconciliation import BaseReconciliationCaseModel
+from app.domain.reconciliation.contracts import (
     BaseReconciliationCase,
     ReconciliationCaseCreateV1,
     ReconciliationDecisionV1,
     ReconciliationStatus,
 )
-from app.features.reconciliation.models import BaseReconciliationCaseModel
 
 
 class BaseReconciliationCaseRepository:

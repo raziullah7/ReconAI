@@ -4,11 +4,11 @@ from math import inf, nan
 import pytest
 from pydantic import ValidationError
 
-from app.features.reconciliation.decisions import (
+from app.domain.reconciliation.decisions import (
     validate_actual_payment_input,
     validate_agreement_extraction_input,
 )
-from app.features.reconciliation.schemas import (
+from app.schemas.reconciliation import (
     ActualPaymentInputV1,
     AgreementExtractionInputV1,
     PaymentType,

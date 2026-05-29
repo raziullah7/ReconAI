@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.features.reconciliation.contracts import ReconciliationStatus
+from app.domain.reconciliation.contracts import ReconciliationStatus
 
 type JsonValue = (
     str | int | float | bool | None | list[JsonValue] | dict[str, JsonValue]
