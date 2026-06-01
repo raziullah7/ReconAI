@@ -21,6 +21,37 @@ from app.services.reconciliation import BaseReconciliationCaseService
 LOCAL_DATABASE_URL = "postgresql+psycopg://reconai:reconai@localhost:5432/reconai"
 
 
+def test_get_reconciliation_cases_openapi_uses_named_list_response() -> None:
+    """Verifies the list endpoint exposes a named response DTO.
+
+    Summary:
+        Reads the generated OpenAPI schema for the collection endpoint.
+    Mocks:
+        FastAPI TestClient with explicit settings; no database request is made.
+    Assertions:
+        The 200 response references `ReconciliationCaseListResponseV1`, and the
+        DTO exposes `items` as a list of `ReconciliationCaseListItemV1`.
+    """
+    application = create_app(Settings(DATABASE_URL=LOCAL_DATABASE_URL))
+
+    response = TestClient(application).get("/openapi.json")
+
+    components = response.json()["components"]["schemas"]
+    list_response_schema = components["ReconciliationCaseListResponseV1"]
+    response_schema = response.json()["paths"]["/v1/reconciliation-cases"]["get"][
+        "responses"
+    ]["200"]["content"]["application/json"]["schema"]
+
+    assert response_schema == {
+        "$ref": "#/components/schemas/ReconciliationCaseListResponseV1"
+    }
+    assert list_response_schema["properties"]["items"] == {
+        "items": {"$ref": "#/components/schemas/ReconciliationCaseListItemV1"},
+        "title": "Items",
+        "type": "array",
+    }
+
+
 @dataclass(frozen=True, slots=True)
 class ApiClientContext:
     """Hold the API client and dependency-call probe for route tests."""

@@ -167,6 +167,12 @@ class ReconciliationCaseListItemV1(_BaseSchema):
     updated_at: datetime
 
 
+class ReconciliationCaseListResponseV1(_BaseSchema):
+    """Collection response for stored reconciliation case summaries."""
+
+    items: list[ReconciliationCaseListItemV1]
+
+
 def _reject_non_finite_numbers(value: JsonValue | None) -> None:
     if isinstance(value, float) and not isfinite(value):
         msg = "raw_llm_output must contain only finite JSON numbers"
