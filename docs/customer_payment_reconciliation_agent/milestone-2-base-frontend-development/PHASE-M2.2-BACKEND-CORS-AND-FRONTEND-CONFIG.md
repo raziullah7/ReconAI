@@ -54,6 +54,7 @@ T_bottom_up: about 70 test LOC for backend CORS/settings coverage.
   `allow_headers=["content-type"]`, and `allow_credentials=False` for the
   Milestone 2 local Base API surface.
 - Add or update backend tests for settings parsing and local CORS preflight.
+- Update `backend/.env.example` with `BACKEND_CORS_ORIGINS`.
 - Add `frontend/.env.example` with `VITE_RECONAI_API_BASE_URL`.
 - Add `frontend/src/config/api.ts` that exports the normalized Base API URL.
 - Update frontend README with the local backend and frontend command sequence.
@@ -132,7 +133,8 @@ built yet.
 ## Summary of Changes
 
 - Backend settings and app factory gain local CORS support.
-- Frontend gains one API base URL helper and env example.
+- Backend and frontend env examples document the local CORS/API URL settings.
+- Frontend gains one API base URL helper.
 - READMEs document local two-terminal development.
 
 ## Out of Scope
