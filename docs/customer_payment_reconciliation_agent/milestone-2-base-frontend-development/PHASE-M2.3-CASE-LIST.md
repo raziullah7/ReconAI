@@ -12,6 +12,8 @@ see empty and error states, and retry failed loads.
 Assumptions:
 
 - M2.1 cleaned the scaffold and M2.2 added backend CORS plus API base config.
+- This phase starts on top of M2.2; confirm `frontend/src/config/api.ts`,
+  `frontend/.env.example`, and backend CORS support exist before coding.
 - The backend Base API is running locally and migrations have been applied.
 - The list endpoint returns `ReconciliationCaseListResponseV1`.
 
@@ -31,14 +33,21 @@ browser checks against the local backend.
 
 ### Green
 
-- Add frontend API DTO types that mirror the Base API list response from
-  [../API.md](../API.md#base-api-schemas).
-- Add a small `listReconciliationCases` client function that calls
-  `GET /v1/reconciliation-cases` through the M2.2 API base URL helper.
-- Replace the static shell center with a case list view in `App.tsx` or a small
-  local component split if the file becomes hard to read.
+- Add `frontend/src/api/reconciliationCases.ts` exporting
+  `ReconciliationStatus`, `ReconciliationCaseListItemV1`,
+  `ReconciliationCaseListResponseV1`, and
+  `listReconciliationCases(): Promise<ReconciliationCaseListResponseV1>`.
+- `listReconciliationCases` calls `GET /v1/reconciliation-cases` through the
+  M2.2 API base URL helper, checks `response.ok`, reads `error.message` from
+  the API error envelope when available, and throws for non-2xx responses,
+  malformed JSON, or a missing `items` array.
+- Replace the static shell center in `frontend/src/App.tsx` with a case list
+  view.
+- Update `frontend/src/App.css` for list, state, retry, and responsive styles.
 - Render status, references, amounts, currency, review flag, and timestamps from
-  each `ReconciliationCaseListItemV1`.
+  each `ReconciliationCaseListItemV1`. Use visible fallback text for nullable
+  references, amounts, and currency, and never show minor-unit amounts as raw
+  unlabeled cents.
 - Add retry behavior that re-runs the list request.
 - Do not add frontend test tooling, frontend test files, or a frontend `test`
   script in this phase.
@@ -49,8 +58,8 @@ Pseudo code for loading:
 on app mount or retry:
     set state to loading
     call listReconciliationCases()
-    if items is empty: set state to empty
-    if items exists: set state to success(items)
+    if items.length === 0: set state to empty
+    else: set state to success(items)
     if request fails: set state to error(message)
 ```
 
@@ -77,12 +86,49 @@ npm run build
 npm run lint
 ```
 
-Optional manual check with backend running:
+Manual check with backend running:
 
 ```bash
-cd frontend
+# Terminal 1, from repo root
+docker compose up -d postgres
+cd backend
+uv run alembic upgrade head
+uv run fastapi dev --host 127.0.0.1 --port 8000
+
+# Terminal 2, from repo root after the backend is running
+curl -X POST http://127.0.0.1:8000/v1/reconciliation-cases \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "external_reference": "CALL-M2-3",
+    "customer_reference": "CUST-M2-3",
+    "source_text": "Customer agreed to pay PKR 2,500 by June 10.",
+    "extraction": {
+      "schema_version": "agreement_extraction.v1",
+      "agreed_amount_minor": 250000,
+      "currency": "PKR",
+      "payment_type": "FULL_PAYMENT",
+      "due_date": "2026-06-10",
+      "is_final_amount": true,
+      "evidence_text": "Customer agreed to pay PKR 2,500 by June 10.",
+      "confidence": 0.92,
+      "needs_human_review": false
+    },
+    "actual_payment": {
+      "paid_amount_minor": 250000,
+      "currency": "PKR",
+      "payment_date": "2026-06-09",
+      "reference": "TXN-M2-3",
+      "payment_method": "bank_transfer"
+    }
+  }'
+
+# Terminal 3, from frontend/
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
+
+Manual success check: open the Vite URL and confirm the `CALL-M2-3` row
+appears. Manual empty check: run against an empty database. Manual error check:
+stop the backend, reload, and confirm the retry state appears.
 
 ## What You Can Run After This Phase
 
@@ -114,5 +160,6 @@ shows an empty state rather than mock data.
 | --- | --- | --- | --- |
 | View stored data before create | inherited | [../PLAN.md](../PLAN.md#milestone-2-base-frontend-development) | User reordered M2 so list precedes submit. |
 | List response shape | inherited | [../API.md](../API.md#base-api-schemas) | Uses `ReconciliationCaseListResponseV1`. |
-| Loading/empty/success/error states | inherited | [../TESTING.md](../TESTING.md#milestone-2-base-frontend-verification) | Required for first data screen. |
+| Success, empty, error, and retry states | inherited | [../TESTING.md](../TESTING.md#milestone-2-base-frontend-verification) | Required for first data screen. |
+| Loading state | phase-local | This phase manual acceptance targets | Required while the first request is pending. |
 | No mock-only screens | inherited | [../PLAN.md](../PLAN.md#milestone-2-base-frontend-development) | Empty backend result must show empty UI, not fixtures. |
