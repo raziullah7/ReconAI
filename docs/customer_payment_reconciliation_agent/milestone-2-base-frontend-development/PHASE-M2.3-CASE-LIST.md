@@ -16,24 +16,18 @@ Assumptions:
 - The list endpoint returns `ReconciliationCaseListResponseV1`.
 
 P_bottom_up: about 220 production LOC for API types/client, list UI, and styles.
-T_bottom_up: about 140 test LOC for API-client and component behavior tests.
+T_bottom_up: 0 frontend test LOC. Verification uses build, lint, and manual
+browser checks against the local backend.
 
 ## Execution Plan
 
-### Red
+### Manual Acceptance Targets
 
-- `api_client_lists_reconciliation_cases`
-  - Summary: Proves the frontend client fetches
-    `/v1/reconciliation-cases` and validates the `items` envelope.
-  - Mocks: Stubbed `fetch`.
-  - Assertions: The client calls the configured API base URL and returns typed
-    list items.
-
-- `case_list_renders_success_empty_and_error_states`
-  - Summary: Proves the UI handles the first Base API screen states.
-  - Mocks: Stubbed list client.
-  - Assertions: Loading text appears while pending, empty text appears for no
-    items, summaries appear for success, and an error state includes retry.
+- A successful `GET /v1/reconciliation-cases` response renders stored case
+  summaries from the backend.
+- An empty `items` response renders an empty state, not mock data.
+- A failed request renders an error state with a retry action.
+- Retrying re-runs the list request without reloading the whole page.
 
 ### Green
 
@@ -46,10 +40,8 @@ T_bottom_up: about 140 test LOC for API-client and component behavior tests.
 - Render status, references, amounts, currency, review flag, and timestamps from
   each `ReconciliationCaseListItemV1`.
 - Add retry behavior that re-runs the list request.
-- Add focused frontend test tooling only if it does not already exist: `vitest`,
-  `@testing-library/react`, `@testing-library/jest-dom`, and `jsdom`. Use
-  stubbed `fetch`; do not add browser E2E tooling.
-- Add a `test` script in `frontend/package.json` that runs `vitest`.
+- Do not add frontend test tooling, frontend test files, or a frontend `test`
+  script in this phase.
 
 Pseudo code for loading:
 
@@ -81,7 +73,6 @@ Local commands:
 
 ```bash
 cd frontend
-npm run test -- --run
 npm run build
 npm run lint
 ```
@@ -110,12 +101,12 @@ shows an empty state rather than mock data.
 
 - Add frontend Base API list DTOs and client.
 - Add the first real data UI for stored case summaries.
-- Add focused frontend tests for list behavior.
+- Add manual verification coverage for list behavior.
 
 ## Out of Scope
 
 - Detail loading, create form, seed scripts, mock-only screens, routing library,
-  auth, tenants, dashboard, exports, and browser E2E tests.
+  auth, tenants, dashboard, exports, frontend tests, and browser E2E tests.
 
 ## Coverage Ledger
 
@@ -123,5 +114,5 @@ shows an empty state rather than mock data.
 | --- | --- | --- | --- |
 | View stored data before create | inherited | [../PLAN.md](../PLAN.md#milestone-2-base-frontend-development) | User reordered M2 so list precedes submit. |
 | List response shape | inherited | [../API.md](../API.md#base-api-schemas) | Uses `ReconciliationCaseListResponseV1`. |
-| Loading/empty/success/error states | inherited | [../TESTING.md](../TESTING.md#milestone-2-base-frontend-tests) | Required for first data screen. |
+| Loading/empty/success/error states | inherited | [../TESTING.md](../TESTING.md#milestone-2-base-frontend-verification) | Required for first data screen. |
 | No mock-only screens | inherited | [../PLAN.md](../PLAN.md#milestone-2-base-frontend-development) | Empty backend result must show empty UI, not fixtures. |

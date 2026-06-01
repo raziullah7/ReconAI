@@ -4,8 +4,9 @@
 
 This phase turns the user-created Vite starter scaffold into a minimal ReconAI
 frontend shell. It removes starter UI, starter assets, template README content,
-and React Compiler-specific setup so future phases start from a small app that
-is easy to understand.
+and irrelevant default template code so future phases start from a small app
+that is easy to understand. It preserves the default frontend initialization
+tooling and dependencies, including the React Compiler setup.
 
 Expected outcome: `frontend/` builds and lints as a ReconAI shell, but it does
 not call the backend yet.
@@ -15,6 +16,8 @@ Assumptions:
 - The existing uncommitted Vite scaffold is the starting point for Milestone 2.
 - This phase is frontend-only and does not modify backend CORS, APIs, database,
   Docker, Redis, Ollama, workers, auth, or tenant behavior.
+- Default Vite/React tooling and dependency setup stays in place unless a file
+  is only a starter UI asset.
 - The shell is intentionally static until M2.2 and M2.3 introduce connectivity
   and data behavior.
 
@@ -50,11 +53,11 @@ T_bottom_up: 0 test LOC because verification uses build and lint only.
 - Replace `frontend/README.md` with local setup and run commands for the
   frontend only.
 - Remove unused starter assets from `frontend/src/assets/` and
-  `frontend/public/`; keep or replace only a simple project favicon if needed.
-- Simplify `frontend/vite.config.ts` to use `@vitejs/plugin-react` without the
-  React Compiler/Babel wrapper.
-- Remove React Compiler-specific dev dependencies from `frontend/package.json`
-  and refresh `frontend/package-lock.json` with npm.
+  `frontend/public/`; keep the default favicon unless a later phase introduces
+  a project-specific icon.
+- Preserve `frontend/vite.config.ts`, `frontend/package.json`, and
+  `frontend/package-lock.json` dependency/tooling setup except for harmless app
+  metadata such as the package name.
 
 Pseudo code for the shell:
 
@@ -87,7 +90,7 @@ cd frontend
 npm install
 npm run build
 npm run lint
-rg -n "React logo|Count is|Get started|React Compiler|vite.svg|react.svg" . -g '!node_modules' -g '!package-lock.json'
+rg -n "React logo|Count is|Get started|vite.svg|react.svg|HMR|vite.dev|react.dev|hero.png|icons.svg" . -g '!node_modules' -g '!package-lock.json'
 ```
 
 The final `rg` command should return no starter UI references, except package
@@ -115,14 +118,13 @@ mock data.
 
 - Change frontend shell files and README.
 - Delete unused starter assets.
-- Change package metadata and lockfile only to remove starter/compiler-specific
-  setup.
+- Preserve default frontend dependencies and compiler tooling.
 
 ## Out of Scope
 
 - Backend CORS and API base URL config.
 - API client functions, fetch calls, seed data, and mock-only screens.
-- Frontend tests beyond build and lint.
+- Frontend unit, component, API-client, and browser tests.
 - Frontend Docker, Redis, Ollama, workers, auth, tenants, dashboards, exports,
   and payment-ledger behavior.
 
@@ -132,5 +134,6 @@ mock data.
 | --- | --- | --- | --- |
 | Frontend starts in Milestone 2 as local Vite only | inherited | [../PLAN.md](../PLAN.md#milestone-2-base-frontend-development) | Limits work to frontend scaffold cleanup. |
 | No API calls in M2.1 | phase-local | This phase summary | Keeps connectivity in M2.2. |
-| Build and lint verification | inherited | [../TESTING.md](../TESTING.md#milestone-2-base-frontend-tests) | Scaffold cleanup has no component tests. |
+| Build and lint verification | inherited | [../TESTING.md](../TESTING.md#milestone-2-base-frontend-verification) | Scaffold cleanup has no frontend tests. |
+| Preserve default frontend tooling | phase-local | This phase assumptions | React Compiler and default dependencies stay. |
 | Existing scaffold is user-created | assumption | Reality check against `frontend/` | Implementation must not discard unrelated user changes. |
