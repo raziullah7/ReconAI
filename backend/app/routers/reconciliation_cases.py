@@ -7,7 +7,7 @@ from app.dependencies import get_reconciliation_case_service
 from app.domain.reconciliation.contracts import ReconciliationStatus
 from app.schemas.reconciliation import (
     ReconciliationCaseCreateRequestV1,
-    ReconciliationCaseListItemV1,
+    ReconciliationCaseListResponseV1,
     ReconciliationCaseResponseV1,
 )
 from app.services.reconciliation import BaseReconciliationCaseService
@@ -64,7 +64,7 @@ def list_reconciliation_cases(
     status_filter: Annotated[ReconciliationStatus | None, Query(alias="status")] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 25,
     offset: Annotated[int, Query(ge=0)] = 0,
-) -> dict[str, list[ReconciliationCaseListItemV1]]:
+) -> ReconciliationCaseListResponseV1:
     """List stored reconciliation case summaries.
 
     What: Reads stored cases with optional status filtering and limit/offset
@@ -79,10 +79,12 @@ def list_reconciliation_cases(
         offset: Number of newest-first rows to skip.
 
     Returns:
-        dict[str, list[ReconciliationCaseListItemV1]]: Collection envelope with
-        summary items.
+        ReconciliationCaseListResponseV1: Collection envelope with summary
+        items.
     """
-    return {"items": service.list_cases(status_filter, limit, offset)}
+    return ReconciliationCaseListResponseV1(
+        items=service.list_cases(status_filter, limit, offset)
+    )
 
 
 @router.get("/{case_id}")

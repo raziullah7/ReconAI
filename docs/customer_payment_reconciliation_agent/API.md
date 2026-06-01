@@ -117,7 +117,15 @@ interface ReconciliationCaseListItemV1 {
   created_at: DateTime;
   updated_at: DateTime;
 }
+
+interface ReconciliationCaseListResponseV1 {
+  items: ReconciliationCaseListItemV1[];
+}
 ```
+
+Post-M1 correction: `ReconciliationCaseListResponseV1` was added after
+Milestone 1 merged. M1.5 correctly planned the JSON shape as `{ items: ... }`,
+but missed giving that collection envelope a named DTO before frontend work.
 
 Example extraction fixture:
 
@@ -166,7 +174,7 @@ Errors: `ValidationFailed`.
 Authentication: deferred for Milestone 1.
 Query: optional `status`, `limit`, and `offset` until cursor pagination is added
 in the target API.
-Response `200`: `{ items: ReconciliationCaseListItemV1[] }`.
+Response `200`: `ReconciliationCaseListResponseV1`.
 Errors: `ValidationFailed`.
 
 #### GET /v1/reconciliation-cases/{case_id}

@@ -83,7 +83,7 @@ from app.dependencies import get_reconciliation_case_service
 from app.domain.reconciliation.contracts import ReconciliationStatus
 from app.schemas.reconciliation import (
     ReconciliationCaseCreateRequestV1,
-    ReconciliationCaseListItemV1,
+    ReconciliationCaseListResponseV1,
     ReconciliationCaseResponseV1,
 )
 from app.services.reconciliation import BaseReconciliationCaseService
@@ -149,7 +149,7 @@ def list_reconciliation_cases(
     status_filter: Annotated[ReconciliationStatus | None, Query(alias="status")] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 25,
     offset: Annotated[int, Query(ge=0)] = 0,
-) -> dict[str, list[ReconciliationCaseListItemV1]]:
+) -> ReconciliationCaseListResponseV1:
     ...
 
 
@@ -176,7 +176,7 @@ POST /v1/reconciliation-cases:
 GET /v1/reconciliation-cases:
     parse optional status, limit, offset
     call injected BaseReconciliationCaseService.list_cases
-    return {"items": items}
+    return ReconciliationCaseListResponseV1(items=items)
 
 GET /v1/reconciliation-cases/{case_id}:
     call injected BaseReconciliationCaseService.get_case
@@ -196,6 +196,15 @@ Expected HTTP error handler:
 - Keep Milestone 1 route paths non-tenantized.
 - Do not add auth, idempotency records, cursor pagination, frontend, workers,
   Redis, Ollama, or real LLM calls.
+
+### Post-M1 Correction
+
+M1.5 planned the list endpoint response as
+`dict[str, list[ReconciliationCaseListItemV1]]` and returned
+`{"items": items}` directly. That JSON shape was correct, but the phase missed a
+named collection-envelope DTO. After Milestone 1 was merged, this was corrected
+by introducing `ReconciliationCaseListResponseV1` while keeping the public JSON
+shape unchanged.
 
 ## Setup and Testing in Local Dev
 

@@ -33,6 +33,8 @@ introduced.
   optional references, source text, extraction, and actual payment.
 - `ReconciliationCaseCreateV1`: repository input that stores validated request
   snapshots and optional references.
+- `ReconciliationCaseListResponseV1`: post-M1 named collection envelope for
+  Base API list responses; M1.5 originally missed naming this DTO.
 - `ValidatedAgreementExtraction`: normalized agreement fields accepted by the
   backend after schema validation.
 - `ValidatedActualPayment`: normalized payment evidence accepted by the backend.
