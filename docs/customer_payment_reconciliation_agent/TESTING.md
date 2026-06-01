@@ -11,9 +11,9 @@
 - Do not add browser, backend integration, seed, or reset scripts unless the
   phase explicitly needs them.
 - Keep scaffold phases to roughly 1-3 focused tests per subsystem.
-- Add frontend tests only when the frontend setup phase exists.
-- For Milestone 2, keep frontend tests focused on behavior that exists in that
-  phase; do not add broad visual or folder-shape tests.
+- Do not add frontend tests or frontend test tooling in Milestone 2.
+- Verify Milestone 2 frontend behavior with build, lint, and manual browser
+  checks against the local backend.
 - Add more tests when persistence, tenant isolation, auth, workers, or
   reconciliation rules actually exist.
 
@@ -27,8 +27,8 @@ Backend:
 
 Frontend:
 
-- No frontend tests yet. Milestone 2 introduces frontend verification in phase
-  order after the scaffold cleanup exists.
+- No frontend tests yet. Milestone 2 keeps frontend verification manual after
+  the scaffold cleanup exists.
 
 ## Milestone 1 Base API Tests
 
@@ -97,44 +97,48 @@ Not in Milestone 1 tests:
 - Redis, worker, queue, or Ollama behavior.
 - CSV imports or payment-ledger matching.
 
-## Milestone 2 Base Frontend Tests
+## Milestone 2 Base Frontend Verification
 
-Milestone 2 should test the first frontend only when behavior exists. It should
-prove the UI consumes the Base API instead of testing placeholder screens.
+Milestone 2 should not add frontend test files, frontend test dependencies, or
+frontend test scripts. It should prove the UI consumes the Base API through
+manual browser verification and the existing build/lint commands.
 
-Scaffold cleanup tests:
+Scaffold cleanup checks:
 
 - `npm run build` proves the cleaned Vite shell compiles.
 - `npm run lint` proves the starter cleanup leaves no unused imports or assets.
 
-CORS and config tests:
+CORS and config checks:
 
 - Backend settings parse local frontend origins for CORS.
 - FastAPI responses include CORS headers for the configured local Vite origin.
 - Frontend build reads the API base URL config without requiring a backend call.
+- Manual browser check confirms the frontend can reach the configured backend.
 
-Case list tests:
+Case list manual checks:
 
 - A successful list response renders stored case summaries from
   `ReconciliationCaseListResponseV1`.
 - An empty list response renders the empty state.
 - Network or response failures render an error state with a retry action.
 
-Case detail tests:
+Case detail manual checks:
 
 - Selecting a case loads and renders `ReconciliationCaseResponseV1` detail.
 - Missing or failed detail responses render a detail error state without losing
   the list.
 
-Submit and result tests:
+Submit and result manual checks:
 
 - The form builds `ReconciliationCaseCreateRequestV1` from user-entered fields.
 - A successful create response renders the backend decision and refreshes or
   updates visible stored cases.
 - Validation or network failures render an error state and preserve user input.
 
-Not in Milestone 2 tests:
+Not in Milestone 2 verification:
 
+- Frontend unit, component, API-client, or browser tests.
+- Vitest, Testing Library, jsdom, Playwright, Cypress, or frontend test scripts.
 - Browser E2E automation.
 - Visual regression snapshots.
 - Auth, tenant switching, dashboard, export, Redis, worker, Ollama, or real LLM
@@ -144,7 +148,7 @@ Not in Milestone 2 tests:
 
 | Milestone Area | Test Growth |
 | --- | --- |
-| Base frontend | Milestone 2 component and API-client tests after real UI behavior exists |
+| Base frontend | Revisit component and API-client tests after the M2 UI stabilizes |
 | LLM integration | parser fixtures, adapter contract tests, and invalid-output cases |
 | Tenant context | tenant isolation unit tests |
 | Auth | protected route and permission tests |
@@ -161,7 +165,7 @@ Not in Milestone 2 tests:
 - Backend: pytest from `backend/` with `uv run python -m pytest`.
 - Backend types: `uv run mypy app`.
 - Backend lint: `uv run ruff check .`.
-- Frontend: `npm run build` and `npm run lint` after M2.1; focused component
-  and API-client tests after M2.3 introduces data behavior.
+- Frontend: `npm run build`, `npm run lint`, and manual browser checks in
+  Milestone 2.
 - Browser E2E: deferred until the UI has real workflows.
 - Load/performance tests: deferred until APIs stabilize.

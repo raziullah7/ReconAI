@@ -21,31 +21,20 @@ Assumptions:
 
 P_bottom_up: about 260 production LOC for form state, request building, create
 client, result rendering, and styles.
-T_bottom_up: about 180 test LOC for request-building, success, and error tests.
+T_bottom_up: 0 frontend test LOC. Verification uses build, lint, and manual
+browser checks against the local backend.
 
 ## Execution Plan
 
-### Red
+### Manual Acceptance Targets
 
-- `build_create_request_from_form_values`
-  - Summary: Proves form values produce the Base API create request.
-  - Mocks: None.
-  - Assertions: Major-unit amounts become minor-unit integers,
-    `schema_version` is `agreement_extraction.v1`, empty optional payment fields
-    become `actual_payment: null`, and selected payment type is preserved.
-
-- `api_client_creates_reconciliation_case`
-  - Summary: Proves the frontend client posts the create request.
-  - Mocks: Stubbed `fetch`.
-  - Assertions: The client calls `POST /v1/reconciliation-cases` with JSON and
-    returns `ReconciliationCaseResponseV1`.
-
-- `submit_form_renders_result_and_preserves_errors`
-  - Summary: Proves the UI handles success and failure without losing user
-    input.
-  - Mocks: Stubbed create and list clients.
-  - Assertions: Success renders decision status/reason and updates visible cases;
-    validation/network failure renders an error and leaves entered values intact.
+- Form values produce a `ReconciliationCaseCreateRequestV1` request with
+  two-decimal major-unit amounts converted to minor-unit integers.
+- Empty optional payment fields submit `actual_payment: null`.
+- A successful `POST /v1/reconciliation-cases` response renders the backend
+  decision and updates visible stored cases.
+- Backend validation or network failures render an error and preserve entered
+  form values.
 
 ### Green
 
@@ -81,7 +70,8 @@ on submit:
 
 ### Refactor
 
-- Keep request-building pure and tested separately from React state.
+- Keep request-building pure and separated from React state where it improves
+  readability.
 - Do not introduce form libraries until validation needs exceed this first form.
 
 ## Setup and Testing in Local Dev
@@ -90,7 +80,6 @@ Local commands:
 
 ```bash
 cd frontend
-npm run test -- --run
 npm run build
 npm run lint
 ```
@@ -120,13 +109,13 @@ manual LLM-shaped extraction input, and display the backend decision.
 
 - Add create request builder and API client function.
 - Add the create form and result view.
-- Add focused tests for request construction and submit behavior.
+- Add manual verification coverage for request construction and submit behavior.
 
 ## Out of Scope
 
 - Real LLM extraction, file upload, transcript submission, payment-ledger
-  matching, review actions, auth, tenants, dashboard, exports, and browser E2E
-  tests.
+  matching, review actions, auth, tenants, dashboard, exports, frontend tests,
+  and browser E2E tests.
 
 ## Coverage Ledger
 

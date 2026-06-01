@@ -18,24 +18,18 @@ Assumptions:
 - No router library is needed; selection can stay in local React state.
 
 P_bottom_up: about 190 production LOC for detail client, detail UI, and styles.
-T_bottom_up: about 120 test LOC for client and component behavior tests.
+T_bottom_up: 0 frontend test LOC. Verification uses build, lint, and manual
+browser checks against the local backend.
 
 ## Execution Plan
 
-### Red
+### Manual Acceptance Targets
 
-- `api_client_gets_reconciliation_case_detail`
-  - Summary: Proves the frontend client fetches a detail URL by case ID.
-  - Mocks: Stubbed `fetch`.
-  - Assertions: The client calls `/v1/reconciliation-cases/{case_id}` and
-    returns a typed `ReconciliationCaseResponseV1`.
-
-- `case_detail_renders_success_and_error_states`
-  - Summary: Proves selection loads detail while preserving the list.
-  - Mocks: Stubbed list and detail clients.
-  - Assertions: Selecting a case shows loading, renders extraction/payment/
-    decision fields on success, and renders an error state for failed detail
-    requests.
+- Selecting a stored case calls `GET /v1/reconciliation-cases/{case_id}`.
+- A successful response renders extraction, payment evidence, decision, and
+  timestamps.
+- A failed or not-found detail response renders a detail error state without
+  clearing the loaded list.
 
 ### Green
 
@@ -72,7 +66,6 @@ Local commands:
 
 ```bash
 cd frontend
-npm run test -- --run
 npm run build
 npm run lint
 ```
@@ -103,12 +96,13 @@ detail. It still cannot submit a new case.
 
 - Add detail client behavior.
 - Add selectable list/detail interaction.
-- Add focused tests for detail loading and error handling.
+- Add manual verification coverage for detail loading and error handling.
 
 ## Out of Scope
 
 - Create form, editing, review actions, URL routing, auth, tenant filtering,
-  audit history, payment candidate matching, and browser E2E tests.
+  audit history, payment candidate matching, frontend tests, and browser E2E
+  tests.
 
 ## Coverage Ledger
 
@@ -116,5 +110,5 @@ detail. It still cannot submit a new case.
 | --- | --- | --- | --- |
 | Detail endpoint shape | inherited | [../API.md](../API.md#base-api-endpoints) | Uses M1 `GET /v1/reconciliation-cases/{case_id}`. |
 | Detail after list | inherited | [../PLAN.md](../PLAN.md#milestone-2-base-frontend-development) | Preserves view-before-create order. |
-| Detail error handling | inherited | [../TESTING.md](../TESTING.md#milestone-2-base-frontend-tests) | Missing/failed detail must not clear list. |
+| Detail error handling | inherited | [../TESTING.md](../TESTING.md#milestone-2-base-frontend-verification) | Missing/failed detail must not clear list. |
 | Local React state selection | phase-local | This phase assumptions | Avoids router dependency in M2.4. |
