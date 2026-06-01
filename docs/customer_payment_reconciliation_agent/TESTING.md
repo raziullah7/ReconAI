@@ -12,6 +12,8 @@
   phase explicitly needs them.
 - Keep scaffold phases to roughly 1-3 focused tests per subsystem.
 - Add frontend tests only when the frontend setup phase exists.
+- For Milestone 2, keep frontend tests focused on behavior that exists in that
+  phase; do not add broad visual or folder-shape tests.
 - Add more tests when persistence, tenant isolation, auth, workers, or
   reconciliation rules actually exist.
 
@@ -25,7 +27,8 @@ Backend:
 
 Frontend:
 
-- No frontend tests yet. The frontend is intentionally deferred.
+- No frontend tests yet. Milestone 2 introduces frontend verification in phase
+  order after the scaffold cleanup exists.
 
 ## Milestone 1 Base API Tests
 
@@ -94,11 +97,54 @@ Not in Milestone 1 tests:
 - Redis, worker, queue, or Ollama behavior.
 - CSV imports or payment-ledger matching.
 
+## Milestone 2 Base Frontend Tests
+
+Milestone 2 should test the first frontend only when behavior exists. It should
+prove the UI consumes the Base API instead of testing placeholder screens.
+
+Scaffold cleanup tests:
+
+- `npm run build` proves the cleaned Vite shell compiles.
+- `npm run lint` proves the starter cleanup leaves no unused imports or assets.
+
+CORS and config tests:
+
+- Backend settings parse local frontend origins for CORS.
+- FastAPI responses include CORS headers for the configured local Vite origin.
+- Frontend build reads the API base URL config without requiring a backend call.
+
+Case list tests:
+
+- A successful list response renders stored case summaries from
+  `ReconciliationCaseListResponseV1`.
+- An empty list response renders the empty state.
+- Network or response failures render an error state with a retry action.
+
+Case detail tests:
+
+- Selecting a case loads and renders `ReconciliationCaseResponseV1` detail.
+- Missing or failed detail responses render a detail error state without losing
+  the list.
+
+Submit and result tests:
+
+- The form builds `ReconciliationCaseCreateRequestV1` from user-entered fields.
+- A successful create response renders the backend decision and refreshes or
+  updates visible stored cases.
+- Validation or network failures render an error state and preserve user input.
+
+Not in Milestone 2 tests:
+
+- Browser E2E automation.
+- Visual regression snapshots.
+- Auth, tenant switching, dashboard, export, Redis, worker, Ollama, or real LLM
+  behavior.
+
 ## Later Test Growth
 
 | Milestone Area | Test Growth |
 | --- | --- |
-| Base frontend | component and API-client tests after frontend setup exists |
+| Base frontend | Milestone 2 component and API-client tests after real UI behavior exists |
 | LLM integration | parser fixtures, adapter contract tests, and invalid-output cases |
 | Tenant context | tenant isolation unit tests |
 | Auth | protected route and permission tests |
@@ -115,6 +161,7 @@ Not in Milestone 1 tests:
 - Backend: pytest from `backend/` with `uv run python -m pytest`.
 - Backend types: `uv run mypy app`.
 - Backend lint: `uv run ruff check .`.
-- Frontend: deferred until the frontend setup phase.
+- Frontend: `npm run build` and `npm run lint` after M2.1; focused component
+  and API-client tests after M2.3 introduces data behavior.
 - Browser E2E: deferred until the UI has real workflows.
 - Load/performance tests: deferred until APIs stabilize.

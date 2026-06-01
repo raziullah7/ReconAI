@@ -10,8 +10,8 @@ implementation starts.
 ## Current Foundation Rule
 
 For the early phases, Docker is only for PostgreSQL. The backend runs locally
-with uv. The frontend is deferred until the backend has enough useful API
-behavior to display.
+with uv. The frontend starts in Milestone 2 as a local Vite app only; frontend
+Docker, Redis, Ollama, and workers remain deferred until a phase needs them.
 
 ## Development Shape
 
@@ -81,7 +81,7 @@ These gates remain before later domain phases are finalized:
 | --- | --- | --- | --- | --- |
 | 0 | Current Foundation | DB-only Compose, uv backend env, minimal READMEs, current docs | Completed foundation summary | backend pytest |
 | 1 | Base API Development | Create, list, and fetch persisted reconciliation cases from LLM-shaped input | `@spec-reviewer`, `@doc-reviewer`, `@phase-reviewer` | backend API tests and local `/v1/reconciliation-cases` |
-| 2 | Base Frontend Development | First UI submits and displays the stable Base API contract | `@doc-reviewer`, `@phase-reviewer` | frontend dev server against Base API |
+| 2 | Base Frontend Development | First UI views stored Base API data before adding create flows | `@doc-reviewer`, `@phase-reviewer` | frontend dev server against Base API |
 | 3 | LLM Integration | Local LLM adapter emits `AgreementExtractionInputV1` for the same backend path | `@spec-reviewer`, `@phase-reviewer` | mocked and local LLM extraction checks |
 | 4 | Vertical Expansion | Auth, tenants, customers, payments, workers, review, dashboard, and exports in slices | reviewer matched to each slice | full-stack checks for each slice |
 
@@ -129,18 +129,31 @@ Milestone 1 boundaries:
 
 ## Milestone 2: Base Frontend Development
 
-Purpose: add the first frontend only after Milestone 1 gives it real data to
-submit and display.
+Purpose: add the first frontend after Milestone 1 gives it real stored case data
+to view. Milestone 2 views existing Base API data before it introduces the
+create form.
 
-Expected slices:
+Detailed phase plans live in
+[milestone-2-base-frontend-development/](milestone-2-base-frontend-development/).
 
-1. Frontend app shell and README with local commands.
-2. Reconciliation input form that produces the Base API request shape.
-3. Result view for the backend decision.
-4. Case list/detail screens for stored cases.
+| Order | Phase | Main Outcome |
+| --- | --- | --- |
+| 1 | [M2.1 Frontend Scaffold Cleanup](milestone-2-base-frontend-development/PHASE-M2.1-FRONTEND-SCAFFOLD-CLEANUP.md) | Replace the starter Vite UI with a minimal ReconAI shell and local README. |
+| 2 | [M2.2 Backend CORS And Frontend Config](milestone-2-base-frontend-development/PHASE-M2.2-BACKEND-CORS-AND-FRONTEND-CONFIG.md) | Allow the browser frontend to call the local FastAPI backend and centralize the frontend API base URL. |
+| 3 | [M2.3 Case List](milestone-2-base-frontend-development/PHASE-M2.3-CASE-LIST.md) | Display stored reconciliation case summaries from the Base API. |
+| 4 | [M2.4 Case Detail](milestone-2-base-frontend-development/PHASE-M2.4-CASE-DETAIL.md) | Display one stored reconciliation case detail from the Base API. |
+| 5 | [M2.5 Reconciliation Submit And Result](milestone-2-base-frontend-development/PHASE-M2.5-RECONCILIATION-SUBMIT-AND-RESULT.md) | Submit `ReconciliationCaseCreateRequestV1` and display the backend decision response. |
 
-The frontend should not introduce mock-only screens that cannot call the current
-backend. It should consume the reviewed Base API contract.
+Milestone 2 boundaries:
+
+- The frontend consumes only the Milestone 1 Base API.
+- Case list and detail come before create so users can inspect stored data
+  before adding new cases.
+- Backend CORS is introduced only for local Vite-to-FastAPI development.
+- No mock-only screens are allowed; every data screen must call the current
+  backend contract.
+- Frontend Docker, Redis, Ollama, workers, auth, tenants, dashboards, exports,
+  CSV import, and payment-ledger matching remain out of scope.
 
 ## Milestone 3: LLM Integration
 

@@ -3,6 +3,18 @@
 > Status: This is a target design document. It does not mean every item is implemented today. Use [README.md](README.md) and [PLAN.md](PLAN.md) for the current implementation phase.
 
 
+## Milestone 2 Base Frontend Slice
+
+Milestone 2 implements only the local Base API frontend path: clean shell, local
+backend connectivity, case list, case detail, then create-and-result. Login,
+tenants, dashboards, payment ledger, review workflow, exports, and worker
+status screens remain target UI only.
+
+The first data screens must view stored cases before the create form is added,
+so users can understand existing backend output before submitting new data.
+The M2 submit form uses major-unit amount entry and converts to two-decimal
+minor units for the Base API until tenant currency metadata exists.
+
 ## User Journeys
 
 - Finance intake: choose tenant, select/create customer, upload recording or submit transcript, see processing status.
