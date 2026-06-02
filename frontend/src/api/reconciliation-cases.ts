@@ -42,9 +42,7 @@ export async function listReconciliationCases(): Promise<ReconciliationCaseListR
     throw new Error(await readErrorMessage(response))
   }
 
-  const body = await readJson(response)
-
-  return parseListResponse(body)
+  return parseListResponse(await readJson(response))
 }
 
 function buildApiUrl(path: string): string {
@@ -135,6 +133,7 @@ function readOptionalString(value: unknown, fieldName: string): string | null {
   if (value === undefined || value === null) {
     return null
   }
+
   if (typeof value !== 'string') {
     throw new Error(`The backend returned an invalid ${fieldName}.`)
   }
@@ -146,6 +145,7 @@ function readOptionalNumber(value: unknown, fieldName: string): number | null {
   if (value === undefined || value === null) {
     return null
   }
+
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     throw new Error(`The backend returned an invalid ${fieldName}.`)
   }

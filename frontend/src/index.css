@@ -1,64 +1,15 @@
-:root {
-  --surface: #f7f8fb;
-  --surface-raised: #ffffff;
-  --text: #343b4a;
-  --heading: #111827;
-  --muted: #687083;
-  --border: #dfe4ec;
-  --brand: #2251a4;
-  --brand-surface: #eef4ff;
-  --brand-border: #b8c9ed;
-  --success-text: #17613a;
-  --success-surface: #eaf7ef;
-  --success-border: #a7d9b8;
-  --warning-text: #7a4b00;
-  --warning-surface: #fff4d7;
-  --warning-border: #e7c56f;
-  --danger: #a03434;
-  --danger-text: #a03434;
-  --danger-surface: #fff0f0;
-  --danger-border: #efb1b1;
-  --status-text: var(--muted);
-  --status-surface: var(--surface);
-  --status-border: var(--border);
-  --focus: #7aa7ff;
+@import "tailwindcss";
+@import "@heroui/styles";
 
+:root {
   font: 16px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
-  color: var(--text);
-  background: var(--surface);
+    "Segoe UI", sans-serif;
+  color: #111827;
+  background: #f8fafc;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --surface: #11141a;
-    --surface-raised: #191e27;
-    --text: #d8dee9;
-    --heading: #f7f8fb;
-    --muted: #9ba5b7;
-    --border: #2b3442;
-    --brand: #8fb6ff;
-    --brand-surface: #17243a;
-    --brand-border: #31598f;
-    --success-text: #90e0ad;
-    --success-surface: #153222;
-    --success-border: #2f6d45;
-    --warning-text: #f5cf78;
-    --warning-surface: #382a12;
-    --warning-border: #756028;
-    --danger: #ffaaa5;
-    --danger-text: #ffaaa5;
-    --danger-surface: #3d1e22;
-    --danger-border: #7a3a42;
-    --status-text: var(--muted);
-    --status-surface: var(--surface);
-    --status-border: var(--border);
-    --focus: #8fb6ff;
-  }
 }
 
 * {
@@ -67,7 +18,7 @@
 
 html {
   min-width: 320px;
-  background: var(--surface);
+  background: #f8fafc;
 }
 
 body {
