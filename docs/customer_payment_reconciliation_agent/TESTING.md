@@ -121,19 +121,25 @@ Case list manual checks:
   `ReconciliationCaseListResponseV1`.
 - An empty list response renders the empty state.
 - Network or response failures render an error state with a retry action.
+- The `/reconciliation-cases` route loads through the TanStack Router route
+  loader and shows route-level pending/error UI.
 
 Case detail manual checks:
 
 - Selecting a case loads and renders `ReconciliationCaseResponseV1` detail.
 - Missing or failed detail responses render a detail error state without losing
-  the list.
+  the list route or browser navigation context.
+- Direct navigation to `/reconciliation-cases/{case_id}` loads the same detail
+  state as navigating from the list.
 
 Submit and result manual checks:
 
 - The form builds `ReconciliationCaseCreateRequestV1` from user-entered fields.
-- A successful create response renders the backend decision and refreshes or
-  updates visible stored cases.
+- A successful create response renders the backend decision, invalidates route
+  data, and offers navigation to the created detail route.
 - Validation or network failures render an error state and preserve user input.
+- The `/reconciliation-cases/new` route remains browser-addressable and links
+  users back to the list or created detail route after success.
 
 Not in Milestone 2 verification:
 

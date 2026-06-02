@@ -15,6 +15,13 @@ so users can understand existing backend output before submitting new data.
 The M2 submit form uses major-unit amount entry and converts to two-decimal
 minor units for the Base API until tenant currency metadata exists.
 
+Starting in M2.3, Milestone 2 uses TanStack Router file routes for the list,
+detail, and submit screens. Route data screens should use route loaders plus
+route-level loading and error states instead of burying initial data loading in
+`useEffect`. Generic UI primitives come from HeroUI, so ReconAI should avoid a
+custom `ui-kit`; route-specific extracted pieces belong beside their route in a
+`-components` folder only when the route component becomes hard to read.
+
 ## User Journeys
 
 - Finance intake: choose tenant, select/create customer, upload recording or submit transcript, see processing status.

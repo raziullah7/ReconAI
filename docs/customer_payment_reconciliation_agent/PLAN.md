@@ -131,7 +131,8 @@ Milestone 1 boundaries:
 
 Purpose: add the first frontend after Milestone 1 gives it real stored case data
 to view. Milestone 2 views existing Base API data before it introduces the
-create form.
+create form, and introduces the routing structure needed for list, detail, and
+submit screens.
 
 Detailed phase plans live in
 [milestone-2-base-frontend-development/](milestone-2-base-frontend-development/).
@@ -140,9 +141,9 @@ Detailed phase plans live in
 | --- | --- | --- |
 | 1 | [M2.1 Frontend Scaffold Cleanup](milestone-2-base-frontend-development/PHASE-M2.1-FRONTEND-SCAFFOLD-CLEANUP.md) | Replace the starter Vite UI with a minimal ReconAI shell and local README. |
 | 2 | [M2.2 Backend CORS And Frontend Config](milestone-2-base-frontend-development/PHASE-M2.2-BACKEND-CORS-AND-FRONTEND-CONFIG.md) | Allow the browser frontend to call the local FastAPI backend and centralize the frontend API base URL. |
-| 3 | [M2.3 Case List](milestone-2-base-frontend-development/PHASE-M2.3-CASE-LIST.md) | Display stored reconciliation case summaries from the Base API. |
-| 4 | [M2.4 Case Detail](milestone-2-base-frontend-development/PHASE-M2.4-CASE-DETAIL.md) | Display one stored reconciliation case detail from the Base API. |
-| 5 | [M2.5 Reconciliation Submit And Result](milestone-2-base-frontend-development/PHASE-M2.5-RECONCILIATION-SUBMIT-AND-RESULT.md) | Submit `ReconciliationCaseCreateRequestV1` and display the backend decision response. |
+| 3 | [M2.3 Case List](milestone-2-base-frontend-development/PHASE-M2.3-CASE-LIST.md) | Introduce HeroUI, Tailwind CSS, TanStack Router, and the stored case list route. |
+| 4 | [M2.4 Case Detail](milestone-2-base-frontend-development/PHASE-M2.4-CASE-DETAIL.md) | Display one stored reconciliation case detail from the Base API through a URL route. |
+| 5 | [M2.5 Reconciliation Submit And Result](milestone-2-base-frontend-development/PHASE-M2.5-RECONCILIATION-SUBMIT-AND-RESULT.md) | Submit `ReconciliationCaseCreateRequestV1` from a URL route and display the backend decision response. |
 
 Milestone 2 boundaries:
 
@@ -150,6 +151,10 @@ Milestone 2 boundaries:
 - Case list and detail come before create so users can inspect stored data
   before adding new cases.
 - Backend CORS is introduced only for local Vite-to-FastAPI development.
+- Starting in M2.3, the frontend uses TanStack Router file routes with route
+  loaders and route-level pending/error UI for data screens.
+- Starting in M2.3, the frontend uses HeroUI and Tailwind CSS for generic UI
+  primitives; do not add a custom `ui-kit` or `features` folder.
 - No mock-only screens are allowed; every data screen must call the current
   backend contract.
 - Frontend Docker, Redis, Ollama, workers, auth, tenants, dashboards, exports,
