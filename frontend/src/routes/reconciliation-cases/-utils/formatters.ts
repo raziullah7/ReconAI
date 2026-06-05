@@ -44,6 +44,42 @@ export function formatDateTime(value: string): string {
   }).format(date)
 }
 
+export function formatDate(value: string | null | undefined): string {
+  if (!value) {
+    return 'Not provided'
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date)
+}
+
+export function formatPercent(value: number): string {
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 0,
+    style: 'percent',
+  }).format(value)
+}
+
+export function formatBoolean(value: boolean | null | undefined): string {
+  if (value === null || value === undefined) {
+    return 'Not provided'
+  }
+
+  return value ? 'Yes' : 'No'
+}
+
+export function formatEnumLabel(value: string): string {
+  return value
+    .split('_')
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export function formatStatusLabel(status: ReconciliationStatus): string {
   return STATUS_LABELS[status]
 }

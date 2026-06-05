@@ -53,10 +53,13 @@ browser checks against the local backend.
 - Update the case list UI so each row/card links to
   `/reconciliation-cases/{case_id}` with TanStack Router `Link`.
 - Add `frontend/src/routes/reconciliation-cases/$caseId.tsx` as the detail
-  route.
+  route. Keep the route file focused on the TanStack `Route` export and route
+  options, matching the M2.3 Fast Refresh-friendly route module pattern.
 - Load detail through the route `loader`, read it with
-  `Route.useLoaderData()`, and use route-level `pendingComponent` and
-  `errorComponent` for loading/not-found/network states.
+  a route-local component that calls
+  `useLoaderData({ from: "/reconciliation-cases/$caseId" })`, and use
+  route-level `pendingComponent` and `errorComponent` for
+  loading/not-found/network states.
 - Add a detail view, with route-local components only if needed, that displays
   external reference, customer reference, extraction evidence, agreed amount,
   actual payment, backend decision status, reason, review flag, confidence, and
@@ -76,7 +79,7 @@ when user selects a case from the list:
 route /reconciliation-cases/$caseId:
     pendingComponent renders loading UI
     loader calls getReconciliationCase(caseId)
-    component reads Route.useLoaderData()
+    component reads useLoaderData({ from: "/reconciliation-cases/$caseId" })
     if not found or network error: errorComponent renders error code/message
     retry/back action calls reset() and router.invalidate() when appropriate
 ```
@@ -154,6 +157,8 @@ route-local while using HeroUI primitives.
 - Add `frontend/src/routes/reconciliation-cases/$caseId.tsx`; optionally add
   `frontend/src/routes/reconciliation-cases/-components/case-detail-view.tsx`
   and shared `-utils/formatters.ts` only when they reduce route file size.
+  Regenerate and commit `frontend/src/routeTree.gen.ts` after adding the detail
+  route.
 - Add detail client behavior.
 - Add route-based list/detail navigation.
 - Add manual verification coverage for detail loading and error handling.
