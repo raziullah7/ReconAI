@@ -1,4 +1,5 @@
 import { Card, Chip, Table } from '@heroui/react'
+import { Link } from '@tanstack/react-router'
 
 import type { ReconciliationCaseListItemV1 } from '../../../api/reconciliation-cases'
 import {
@@ -60,9 +61,13 @@ function SuccessContent({ items }: { items: ReconciliationCaseListItemV1[] }) {
               <Table.Row id={caseItem.id}>
                 <Table.Cell>
                   <div className="min-w-48">
-                    <p className="m-0 font-semibold text-slate-950 dark:text-zinc-50">
+                    <Link
+                      to="/reconciliation-cases/$caseId"
+                      params={{ caseId: caseItem.id }}
+                      className="font-semibold text-blue-700 hover:text-blue-800 hover:underline dark:text-blue-300 dark:hover:text-blue-200"
+                    >
                       {formatReference(caseItem.external_reference)}
-                    </p>
+                    </Link>
                     <p className="m-0 text-sm text-slate-500 dark:text-zinc-400">
                       Customer {formatReference(caseItem.customer_reference)}
                     </p>
