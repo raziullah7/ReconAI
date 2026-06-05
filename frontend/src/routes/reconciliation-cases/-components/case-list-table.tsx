@@ -10,7 +10,6 @@ import {
 } from './case-list-state'
 import type { ShellFact } from './case-list-state'
 import {
-  formatDateTime,
   formatMoney,
   formatReference,
   formatStatusLabel,
@@ -24,28 +23,44 @@ interface CaseListTableProps {
 export function CaseListTable({ items }: CaseListTableProps) {
   return (
     <CaseListFrame sidebar={<CaseListFacts facts={buildCaseListFacts(items)} />}>
-      <Card className="min-h-[460px] overflow-hidden border border-slate-200 bg-white shadow-none dark:border-zinc-800 dark:bg-zinc-900">
-        <CaseListCardHeader />
-        <Card.Content className="p-0">
-          {items.length === 0 ? <EmptyContent /> : <SuccessContent items={items} />}
-        </Card.Content>
-      </Card>
+      <div className="grid gap-4">
+        <Card className="recon-surface recon-surface--stable overflow-hidden">
+          <CaseListCardHeader action={<CreateCaseAction />} />
+          <Card.Content className="recon-surface__content">
+            {items.length === 0 ? <EmptyContent /> : <SuccessContent items={items} />}
+          </Card.Content>
+        </Card>
+      </div>
     </CaseListFrame>
   )
 }
 
 function EmptyContent() {
   return (
-    <div className="p-6">
+    <div>
       <CaseListEmptyState />
     </div>
   )
 }
 
+function CreateCaseAction() {
+  return (
+    <Link
+      to="/reconciliation-cases/new"
+      className="recon-button recon-button--primary inline-flex min-h-10 items-center gap-2"
+    >
+      <span className="recon-button__icon" aria-hidden="true">
+        +
+      </span>
+      <span>Create case</span>
+    </Link>
+  )
+}
+
 function SuccessContent({ items }: { items: ReconciliationCaseListItemV1[] }) {
   return (
-    <Table className="rounded-none border-0 shadow-none" variant="secondary">
-      <Table.ScrollContainer>
+    <Table className="recon-table" variant="secondary">
+      <Table.ScrollContainer className="recon-table__scroll">
         <Table.Content aria-label="Stored reconciliation cases">
           <Table.Header>
             <Table.Column isRowHeader>Case</Table.Column>
@@ -60,15 +75,15 @@ function SuccessContent({ items }: { items: ReconciliationCaseListItemV1[] }) {
             {(caseItem) => (
               <Table.Row id={caseItem.id}>
                 <Table.Cell>
-                  <div className="min-w-48">
+                  <div className="recon-case-cell grid min-w-0 gap-1">
                     <Link
                       to="/reconciliation-cases/$caseId"
                       params={{ caseId: caseItem.id }}
-                      className="font-semibold text-blue-700 hover:text-blue-800 hover:underline dark:text-blue-300 dark:hover:text-blue-200"
+                      className="recon-link"
                     >
                       {formatReference(caseItem.external_reference)}
                     </Link>
-                    <p className="m-0 text-sm text-slate-500 dark:text-zinc-400">
+                    <p className="recon-meta">
                       Customer {formatReference(caseItem.customer_reference)}
                     </p>
                   </div>
@@ -90,17 +105,45 @@ function SuccessContent({ items }: { items: ReconciliationCaseListItemV1[] }) {
                 <Table.Cell>
                   {caseItem.needs_human_review ? 'Required' : 'Not required'}
                 </Table.Cell>
-                <Table.Cell>{formatDateTime(caseItem.updated_at)}</Table.Cell>
+                <Table.Cell>
+                  <UpdatedAt value={caseItem.updated_at} />
+                </Table.Cell>
               </Table.Row>
             )}
           </Table.Body>
         </Table.Content>
       </Table.ScrollContainer>
-      <Table.Footer className="justify-between text-xs text-slate-500 dark:text-zinc-400">
+      <Table.Footer className="recon-meta justify-between">
         <span>{items.length} stored cases</span>
         <span>Newest first from Base API</span>
       </Table.Footer>
     </Table>
+  )
+}
+
+function UpdatedAt({ value }: { value: string }) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return <span>{value}</span>
+  }
+
+  return (
+    <time className="recon-updated-at" dateTime={value}>
+      <span>
+        {new Intl.DateTimeFormat(undefined, {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }).format(date)}
+      </span>
+      <span>
+        {new Intl.DateTimeFormat(undefined, {
+          hour: 'numeric',
+          minute: '2-digit',
+        }).format(date)}
+      </span>
+    </time>
   )
 }
 

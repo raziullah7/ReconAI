@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReconciliationCasesRouteImport } from './routes/reconciliation-cases'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReconciliationCasesIndexRouteImport } from './routes/reconciliation-cases/index'
+import { Route as ReconciliationCasesNewRouteImport } from './routes/reconciliation-cases/new'
 import { Route as ReconciliationCasesCaseIdRouteImport } from './routes/reconciliation-cases/$caseId'
 
 const ReconciliationCasesRoute = ReconciliationCasesRouteImport.update({
@@ -30,6 +31,11 @@ const ReconciliationCasesIndexRoute =
     path: '/',
     getParentRoute: () => ReconciliationCasesRoute,
   } as any)
+const ReconciliationCasesNewRoute = ReconciliationCasesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => ReconciliationCasesRoute,
+} as any)
 const ReconciliationCasesCaseIdRoute =
   ReconciliationCasesCaseIdRouteImport.update({
     id: '/$caseId',
@@ -41,11 +47,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/reconciliation-cases': typeof ReconciliationCasesRouteWithChildren
   '/reconciliation-cases/$caseId': typeof ReconciliationCasesCaseIdRoute
+  '/reconciliation-cases/new': typeof ReconciliationCasesNewRoute
   '/reconciliation-cases/': typeof ReconciliationCasesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/reconciliation-cases/$caseId': typeof ReconciliationCasesCaseIdRoute
+  '/reconciliation-cases/new': typeof ReconciliationCasesNewRoute
   '/reconciliation-cases': typeof ReconciliationCasesIndexRoute
 }
 export interface FileRoutesById {
@@ -53,6 +61,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/reconciliation-cases': typeof ReconciliationCasesRouteWithChildren
   '/reconciliation-cases/$caseId': typeof ReconciliationCasesCaseIdRoute
+  '/reconciliation-cases/new': typeof ReconciliationCasesNewRoute
   '/reconciliation-cases/': typeof ReconciliationCasesIndexRoute
 }
 export interface FileRouteTypes {
@@ -61,14 +70,20 @@ export interface FileRouteTypes {
     | '/'
     | '/reconciliation-cases'
     | '/reconciliation-cases/$caseId'
+    | '/reconciliation-cases/new'
     | '/reconciliation-cases/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/reconciliation-cases/$caseId' | '/reconciliation-cases'
+  to:
+    | '/'
+    | '/reconciliation-cases/$caseId'
+    | '/reconciliation-cases/new'
+    | '/reconciliation-cases'
   id:
     | '__root__'
     | '/'
     | '/reconciliation-cases'
     | '/reconciliation-cases/$caseId'
+    | '/reconciliation-cases/new'
     | '/reconciliation-cases/'
   fileRoutesById: FileRoutesById
 }
@@ -100,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReconciliationCasesIndexRouteImport
       parentRoute: typeof ReconciliationCasesRoute
     }
+    '/reconciliation-cases/new': {
+      id: '/reconciliation-cases/new'
+      path: '/new'
+      fullPath: '/reconciliation-cases/new'
+      preLoaderRoute: typeof ReconciliationCasesNewRouteImport
+      parentRoute: typeof ReconciliationCasesRoute
+    }
     '/reconciliation-cases/$caseId': {
       id: '/reconciliation-cases/$caseId'
       path: '/$caseId'
@@ -112,11 +134,13 @@ declare module '@tanstack/react-router' {
 
 interface ReconciliationCasesRouteChildren {
   ReconciliationCasesCaseIdRoute: typeof ReconciliationCasesCaseIdRoute
+  ReconciliationCasesNewRoute: typeof ReconciliationCasesNewRoute
   ReconciliationCasesIndexRoute: typeof ReconciliationCasesIndexRoute
 }
 
 const ReconciliationCasesRouteChildren: ReconciliationCasesRouteChildren = {
   ReconciliationCasesCaseIdRoute: ReconciliationCasesCaseIdRoute,
+  ReconciliationCasesNewRoute: ReconciliationCasesNewRoute,
   ReconciliationCasesIndexRoute: ReconciliationCasesIndexRoute,
 }
 

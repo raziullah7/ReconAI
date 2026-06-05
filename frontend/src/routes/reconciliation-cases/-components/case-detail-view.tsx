@@ -28,15 +28,17 @@ interface CaseDetailViewProps {
 export function CaseDetailView({ caseDetail }: CaseDetailViewProps) {
   return (
     <div className="grid gap-5">
-      <Link
-        to="/reconciliation-cases"
-        className="w-fit text-sm font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200"
-      >
-        Back to list
-      </Link>
-      <Card className="overflow-hidden border border-slate-200 bg-white shadow-none dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex flex-wrap gap-4">
+        <Link to="/reconciliation-cases" className="recon-link w-fit">
+          Back to list
+        </Link>
+        <Link to="/reconciliation-cases/new" className="recon-link w-fit">
+          Create case
+        </Link>
+      </div>
+      <Card className="recon-surface overflow-hidden">
         <CaseDetailCardHeader />
-        <Card.Content className="grid gap-8 p-6">
+        <Card.Content className="recon-surface__content grid gap-8">
           <CaseIdentity caseDetail={caseDetail} />
           <DecisionSection decision={caseDetail.decision} />
           <ExtractionSection extraction={caseDetail.extraction} />
@@ -59,10 +61,10 @@ function CaseIdentity({ caseDetail }: CaseDetailViewProps) {
     <section className="grid gap-4" aria-labelledby="case-identity-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="m-0 text-xs font-bold uppercase text-slate-500 dark:text-zinc-400">
+          <p className="recon-eyebrow">
             Case
           </p>
-          <h2 id="case-identity-title" className="m-0 mt-1 text-xl font-semibold">
+          <h2 id="case-identity-title" className="recon-section-title">
             {formatReference(caseDetail.external_reference)}
           </h2>
         </div>
@@ -156,11 +158,11 @@ function DetailGrid({ items }: { items: readonly { label: string; value: ReactNo
   return (
     <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
-        <div className="rounded-md border border-slate-200 p-4 dark:border-zinc-800" key={item.label}>
-          <dt className="text-xs font-semibold text-slate-500 dark:text-zinc-400">
+        <div className="recon-fact-card" key={item.label}>
+          <dt className="recon-label">
             {item.label}
           </dt>
-          <dd className="m-0 mt-1 break-words text-sm font-semibold text-slate-950 dark:text-zinc-50">
+          <dd className="recon-copy break-words">
             {item.value}
           </dd>
         </div>
@@ -175,13 +177,13 @@ function TextBlock({ label, value, hideLabel = false }: {
   hideLabel?: boolean
 }) {
   return (
-    <div className="rounded-md border border-slate-200 p-4 dark:border-zinc-800">
+    <div className="recon-text-block">
       {hideLabel ? null : (
-        <p className="m-0 text-xs font-semibold text-slate-500 dark:text-zinc-400">
+        <p className="recon-label">
           {label}
         </p>
       )}
-      <p className="m-0 mt-1 whitespace-pre-wrap break-words text-sm text-slate-800 dark:text-zinc-200">
+      <p className="recon-copy whitespace-pre-wrap break-words">
         {formatReference(value)}
       </p>
     </div>
@@ -190,7 +192,7 @@ function TextBlock({ label, value, hideLabel = false }: {
 
 function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <h3 id={id} className="m-0 text-base font-semibold text-slate-950 dark:text-zinc-50">
+    <h3 id={id} className="recon-section-title">
       {children}
     </h3>
   )

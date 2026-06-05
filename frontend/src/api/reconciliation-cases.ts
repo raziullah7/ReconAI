@@ -13,7 +13,7 @@ const RECONCILIATION_STATUSES = [
   'FAILED',
 ] as const
 
-const PAYMENT_TYPES = [
+export const PAYMENT_TYPES = [
   'FULL_PAYMENT',
   'ADVANCE',
   'PARTIAL_PAYMENT',
@@ -70,6 +70,15 @@ export interface ReconciliationCaseResponseV1 {
   created_at: string
   updated_at: string
 }
+
+export interface ReconciliationCaseCreateRequestV1 {
+  external_reference?: string | null
+  customer_reference?: string | null
+  source_text?: string | null
+  extraction: AgreementExtractionInputV1
+  actual_payment?: ActualPaymentInputV1 | null
+}
+
 
 export interface ReconciliationCaseListItemV1 {
   id: string
@@ -129,6 +138,26 @@ export async function getReconciliationCase(
 
   return parseCaseResponse(await readJson(response))
 }
+
+export async function createReconciliationCase(
+  input: ReconciliationCaseCreateRequestV1,
+): Promise<ReconciliationCaseResponseV1> {
+  const response = await fetch(buildApiUrl(RECONCILIATION_CASES_PATH), {
+    body: JSON.stringify(input),
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  })
+
+  if (!response.ok) {
+    throw await readApiError(response)
+  }
+
+  return parseCaseResponse(await readJson(response))
+}
+
 
 function buildApiUrl(path: string): string {
   return new URL(path, getApiBaseUrl()).toString()
