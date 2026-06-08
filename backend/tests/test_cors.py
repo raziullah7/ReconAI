@@ -20,7 +20,7 @@ def test_cors_allows_local_frontend_origin() -> None:
     """
     settings = Settings(
         DATABASE_URL=LOCAL_DATABASE_URL,
-        BACKEND_CORS_ORIGINS=LOCAL_FRONTEND_ORIGIN,
+        BACKEND_CORS_ORIGINS=[LOCAL_FRONTEND_ORIGIN],
     )
     client = TestClient(create_app(settings))
 
