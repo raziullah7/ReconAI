@@ -1,6 +1,6 @@
-# ReconAI — Payment Reconciliation Application
+# ReconAI: Payment Reconciliation Application
 
-**In development.** ReconAI compares a structured payment agreement with supplied payment evidence and stores an explainable reconciliation result. The current `main` branch contains the FastAPI backend; frontend development is available separately.
+**In development.** ReconAI checks payment agreements against payment evidence, then saves the result and the reason for it. The FastAPI backend is on `main`. Frontend work is on separate branches, linked below.
 
 ## Implemented features
 
