@@ -11,7 +11,9 @@
 - Do not add browser, backend integration, seed, or reset scripts unless the
   phase explicitly needs them.
 - Keep scaffold phases to roughly 1-3 focused tests per subsystem.
-- Add frontend tests only when the frontend setup phase exists.
+- Do not add frontend tests or frontend test tooling in Milestone 2.
+- Verify Milestone 2 frontend behavior with build, lint, and manual browser
+  checks against the local backend.
 - Add more tests when persistence, tenant isolation, auth, workers, or
   reconciliation rules actually exist.
 
@@ -25,7 +27,8 @@ Backend:
 
 Frontend:
 
-- No frontend tests yet. The frontend is intentionally deferred.
+- No frontend tests yet. Milestone 2 keeps frontend verification manual after
+  the scaffold cleanup exists.
 
 ## Milestone 1 Base API Tests
 
@@ -94,11 +97,64 @@ Not in Milestone 1 tests:
 - Redis, worker, queue, or Ollama behavior.
 - CSV imports or payment-ledger matching.
 
+## Milestone 2 Base Frontend Verification
+
+Milestone 2 should not add frontend test files, frontend test dependencies, or
+frontend test scripts. It should prove the UI consumes the Base API through
+manual browser verification and the existing build/lint commands.
+
+Scaffold cleanup checks:
+
+- `npm run build` proves the cleaned Vite shell compiles.
+- `npm run lint` proves the starter cleanup leaves no unused imports or assets.
+
+CORS and config checks:
+
+- Backend settings parse local frontend origins for CORS.
+- FastAPI responses include CORS headers for the configured local Vite origin.
+- Frontend build reads the API base URL config without requiring a backend call.
+- Manual browser check confirms the frontend can reach the configured backend.
+
+Case list manual checks:
+
+- A successful list response renders stored case summaries from
+  `ReconciliationCaseListResponseV1`.
+- An empty list response renders the empty state.
+- Network or response failures render an error state with a retry action.
+- The `/reconciliation-cases` route loads through the TanStack Router route
+  loader and shows route-level pending/error UI.
+
+Case detail manual checks:
+
+- Selecting a case loads and renders `ReconciliationCaseResponseV1` detail.
+- Missing or failed detail responses render a detail error state without losing
+  the list route or browser navigation context.
+- Direct navigation to `/reconciliation-cases/{case_id}` loads the same detail
+  state as navigating from the list.
+
+Submit and result manual checks:
+
+- The form builds `ReconciliationCaseCreateRequestV1` from user-entered fields.
+- A successful create response renders the backend decision, invalidates route
+  data, and offers navigation to the created detail route.
+- Validation or network failures render an error state and preserve user input.
+- The `/reconciliation-cases/new` route remains browser-addressable and links
+  users back to the list or created detail route after success.
+
+Not in Milestone 2 verification:
+
+- Frontend unit, component, API-client, or browser tests.
+- Vitest, Testing Library, jsdom, Playwright, Cypress, or frontend test scripts.
+- Browser E2E automation.
+- Visual regression snapshots.
+- Auth, tenant switching, dashboard, export, Redis, worker, Ollama, or real LLM
+  behavior.
+
 ## Later Test Growth
 
 | Milestone Area | Test Growth |
 | --- | --- |
-| Base frontend | component and API-client tests after frontend setup exists |
+| Base frontend | Revisit component and API-client tests after the M2 UI stabilizes |
 | LLM integration | parser fixtures, adapter contract tests, and invalid-output cases |
 | Tenant context | tenant isolation unit tests |
 | Auth | protected route and permission tests |
@@ -115,6 +171,7 @@ Not in Milestone 1 tests:
 - Backend: pytest from `backend/` with `uv run python -m pytest`.
 - Backend types: `uv run mypy app`.
 - Backend lint: `uv run ruff check .`.
-- Frontend: deferred until the frontend setup phase.
+- Frontend: `npm run build`, `npm run lint`, and manual browser checks in
+  Milestone 2.
 - Browser E2E: deferred until the UI has real workflows.
 - Load/performance tests: deferred until APIs stabilize.

@@ -5,6 +5,10 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_BACKEND_CORS_ORIGINS = [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+]
 
 
 class Settings(BaseSettings):
@@ -21,6 +25,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=BACKEND_DIR / ".env",
+        enable_decoding=False,
         extra="ignore",
         populate_by_name=True,
     )
@@ -36,8 +41,25 @@ class Settings(BaseSettings):
         ge=0,
         le=1,
     )
+    backend_cors_origins: list[str] = Field(
+        default_factory=lambda: DEFAULT_BACKEND_CORS_ORIGINS.copy(),
+        alias="BACKEND_CORS_ORIGINS",
+    )
     service_name: str = "reconai-backend"
     app_version: str = "0.1.0"
+
+    @field_validator("backend_cors_origins", mode="before")
+    @classmethod
+    def parse_backend_cors_origins(cls, value: object) -> list[str]:
+        """Parse local frontend origins from comma-separated config."""
+        if value is None or value == "":
+            return DEFAULT_BACKEND_CORS_ORIGINS.copy()
+        if isinstance(value, str):
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        if isinstance(value, list):
+            return [str(origin).strip() for origin in value if str(origin).strip()]
+        msg = "BACKEND_CORS_ORIGINS must be a comma-separated string"
+        raise ValueError(msg)
 
     @field_validator("database_url")
     @classmethod

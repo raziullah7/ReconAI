@@ -26,23 +26,6 @@ Runtime: restart the backend after changing it.
 
 Tenant override: not allowed.
 
-## Current Local Commands
-
-Start the database from the repo root:
-
-```bash
-docker compose up -d postgres
-```
-
-Create `backend/.env`, apply migrations, and start the backend from `backend/`:
-
-```bash
-uv sync
-cp .env.example .env
-uv run alembic upgrade head
-uv run fastapi dev --host 127.0.0.1 --port 8000
-```
-
 ### EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD
 
 Type: backend environment variable.
@@ -60,6 +43,55 @@ Runtime: restart the backend after changing it once the Base API phase
 introduces this setting.
 
 Tenant override: deferred until tenant context exists.
+
+## Current Local Commands
+
+Start the database from the repo root:
+
+```bash
+docker compose up -d postgres
+```
+
+Create `backend/.env`, apply migrations, and start the backend from `backend/`:
+
+```bash
+uv sync
+cp .env.example .env
+uv run alembic upgrade head
+uv run fastapi dev --host 127.0.0.1 --port 8000
+```
+
+## Milestone 2 Planned Configuration
+
+### BACKEND_CORS_ORIGINS
+
+Type: backend environment variable.
+
+Purpose: comma-separated list of browser origins allowed to call the local
+FastAPI backend during Milestone 2 frontend development.
+
+Default for Milestone 2: `http://127.0.0.1:5173,http://localhost:5173`.
+
+Runtime: restart the backend after changing it.
+
+Tenant override: not allowed.
+
+Introduced in: M2.2 Backend CORS And Frontend Config.
+
+### VITE_RECONAI_API_BASE_URL
+
+Type: frontend environment variable.
+
+Purpose: base URL used by the local Vite frontend when calling the FastAPI Base
+API directly from the browser.
+
+Default for Milestone 2 local development: `http://127.0.0.1:8000`.
+
+Runtime: restart the Vite dev server after changing it.
+
+Tenant override: not allowed.
+
+Introduced in: M2.2 Backend CORS And Frontend Config.
 
 ## Deferred Configuration
 
