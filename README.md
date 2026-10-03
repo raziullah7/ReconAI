@@ -1,87 +1,24 @@
-# ReconAI: Payment Reconciliation Application
+# ReconAI
 
-**In development.** ReconAI checks payment agreements against payment evidence, then saves the result and the reason for it. The FastAPI backend is on `main`. Frontend work is on separate branches, linked below.
+**In development.** A Python/FastAPI application that compares payment agreements with payment evidence and stores the decision in PostgreSQL.
 
-## Implemented features
+## Implemented
 
-- Create, list, filter, and retrieve reconciliation cases through versioned API endpoints.
-- Validate agreement and payment input with Pydantic, including currency, confidence, and evidence requirements.
-- Apply deterministic rules for reconciled, underpaid, overpaid, partial-payment, missing-payment, and review-required outcomes.
-- Store input snapshots, decisions, and timestamps in PostgreSQL using SQLAlchemy and Alembic migrations.
-- Return the amount difference, decision reason, confidence, and review flag with each result.
+- Create, list, filter, and retrieve reconciliation cases.
+- Validate structured input with Pydantic.
+- Apply deterministic reconciliation and review rules.
+- Persist input snapshots, decisions, reasons, and timestamps through SQLAlchemy and Alembic.
+- Represent amounts in integer minor units.
 
-Amounts use integer minor units. The current API accepts structured extraction data and an optional payment snapshot; automatic AI extraction from source text is planned.
+The backend is on `main`. React/TypeScript frontend integration is tracked in [PR #9](https://github.com/raziullah7/ReconAI/pull/9); additional submission/result work is on [m2-5-submit-result](https://github.com/raziullah7/ReconAI/tree/m2-5-submit-result). These branches are separate from the default-branch implementation at this documentation update.
 
-## Architecture and workflow
+**AI extraction is planned.** The current API accepts supplied structured data; it does not extract agreements by calling a model.
 
-```text
-Structured agreement + optional payment
-                  |
-             FastAPI router
-                  |
-        Pydantic input validation
-                  |
-      Service + deterministic rules
-                  |
-       SQLAlchemy repository layer
-                  |
-              PostgreSQL
-```
+## Run and inspect
 
-A request to `POST /v1/reconciliation-cases` is validated, evaluated, and persisted. `GET /v1/reconciliation-cases` returns summaries with optional `status`, `limit`, and `offset` parameters; `GET /v1/reconciliation-cases/{case_id}` returns the stored detail. The backend owns the final reconciliation decision.
+Requires Python 3.14+, uv, and Docker Compose. Follow the [setup and API example](docs/SETUP.md), then open `http://127.0.0.1:8000/docs`.
 
-Explore the [API routes](backend/app/routers/reconciliation_cases.py), [decision rules](backend/app/domain/reconciliation/decisions.py), and [architecture documentation](docs/customer_payment_reconciliation_agent/ARCH.md).
-
-## Setup and usage
-
-Requirements: Python **3.14+**, [uv](https://docs.astral.sh/uv/), and Docker with Compose. PostgreSQL runs in Docker; the backend runs in a local Python environment.
-
-From a checkout of `main`:
-
-```bash
-docker compose up -d postgres
-cd backend
-uv sync
-cp .env.example .env
-uv run alembic upgrade head
-uv run fastapi dev --host 127.0.0.1 --port 8000
-```
-
-On PowerShell, `Copy-Item .env.example .env` can replace the copy command. Review `DATABASE_URL` and `EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD` in your local `.env`; the example targets the repository's local PostgreSQL service.
-
-Open [interactive API documentation](http://127.0.0.1:8000/docs), or check the running API:
-
-```bash
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8000/v1/reconciliation-cases
-```
-
-Use the interactive documentation to submit a case with a request such as:
-
-```json
-{
-  "external_reference": "demo-001",
-  "extraction": {
-    "schema_version": "agreement_extraction.v1",
-    "agreed_amount_minor": 10000,
-    "currency": "USD",
-    "payment_type": "FULL_PAYMENT",
-    "is_final_amount": true,
-    "confidence": 0.95,
-    "needs_human_review": false
-  },
-  "actual_payment": {
-    "paid_amount_minor": 10000,
-    "currency": "USD"
-  }
-}
-```
-
-This synthetic example represents a USD 100 agreement and matching payment. See the [backend guide](backend/README.md) for the existing setup and command reference.
-
-## Existing checks
-
-Run from `backend/`:
+From `backend/`, the configured checks are:
 
 ```bash
 uv run python -m pytest
@@ -89,15 +26,7 @@ uv run mypy app
 uv run ruff check .
 ```
 
-The [test suite](backend/tests) includes API, service, repository, validation, and decision-rule tests, alongside health and configuration checks. These are the repository's check commands; this overview does not claim a fresh test run.
+These commands were not executed for this documentation update.
 
-## Current status
+[API routes](backend/app/routers/reconciliation_cases.py) · [Decision rules](backend/app/domain/reconciliation/decisions.py) · [Architecture](docs/customer_payment_reconciliation_agent/ARCH.md)
 
-| Area | Status |
-| --- | --- |
-| Backend on `main` | Structured-input reconciliation API, persistence, and backend tests are implemented. |
-| Frontend integration | [PR #9](https://github.com/raziullah7/ReconAI/pull/9), from [`m2-base-frontend`](https://github.com/raziullah7/ReconAI/tree/m2-base-frontend), contains the React/TypeScript frontend with case-list and detail work; it is separate from `main`. |
-| Submission and result UI | Additional work is available on [`m2-5-submit-result`](https://github.com/raziullah7/ReconAI/tree/m2-5-submit-result). |
-| AI extraction | Planned. The current API accepts supplied structured data; it does not call a model to extract an agreement. |
-
-To explore the frontend, use the [frontend branch's setup guide](https://github.com/raziullah7/ReconAI/blob/m2-base-frontend/frontend/README.md). The [product documentation index](docs/customer_payment_reconciliation_agent/README.md) and [milestone plan](docs/customer_payment_reconciliation_agent/PLAN.md) describe the broader roadmap; planned features are not all implemented.
