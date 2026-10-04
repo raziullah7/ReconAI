@@ -95,3 +95,49 @@ def test_settings_loads_reconciliation_threshold(
     assert "EXTRACTION_REVIEW_CONFIDENCE_THRESHOLD" in str(exc_info.value)
 
     load_settings.cache_clear()
+
+
+def test_settings_parses_backend_cors_origins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verifies the M2.2 local frontend CORS origin setting.
+
+    Summary:
+        Loads the default local Vite origins and an explicit comma-separated
+        override.
+    Mocks:
+        monkeypatch isolates process environment and disables local `.env`
+        loading.
+    Assertions:
+        Defaults include both local Vite hostnames, explicit values are trimmed,
+        and blank entries are ignored.
+    """
+    load_settings.cache_clear()
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://reconai:reconai@localhost:5432/reconai",
+    )
+    monkeypatch.delenv("BACKEND_CORS_ORIGINS", raising=False)
+
+    settings = load_settings()
+
+    assert settings.backend_cors_origins == [
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ]
+
+    load_settings.cache_clear()
+    monkeypatch.setenv(
+        "BACKEND_CORS_ORIGINS",
+        " http://127.0.0.1:5173, ,http://localhost:5173 ",
+    )
+
+    settings = load_settings()
+
+    assert settings.backend_cors_origins == [
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+    ]
+
+    load_settings.cache_clear()

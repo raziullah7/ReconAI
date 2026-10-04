@@ -2,21 +2,22 @@
 
 This folder contains the planning documents for ReconAI. The documents describe
 both the full product direction and the small implementation phases used to get
-there. The current implementation is intentionally backend-first: Docker runs
-only PostgreSQL, the backend runs locally with uv, and the frontend is deferred.
+there. The current implementation is moving from the completed backend-first
+Base API into local Vite frontend phases. Docker still runs only PostgreSQL.
 
 ## Current Status
 
-- Current merge state: Milestone 1 Base API is implemented and under final
-  review before merging to `main`.
+- Current merge state: Milestone 1 Base API is merged; Milestone 2 frontend
+  planning is beginning from the stable Base API.
 - Docker scope: PostgreSQL only.
 - Backend scope: FastAPI app shell, database toolkit, Alembic migration,
   validation and decision core, service/repository layers, and Base API
   create/list/detail endpoints.
-- Frontend scope: intentionally deferred until backend APIs are useful.
-- Deferred services: frontend scaffold, Redis, Ollama, background workers,
-  backend Docker image, frontend Docker image, transcription, payment-ledger
-  matching, review workflow, dashboard, and exports.
+- Frontend scope: Milestone 2 introduces a local Vite app in small reviewed
+  phases, starting with scaffold cleanup before any API screens.
+- Deferred services: Redis, Ollama, background workers, backend Docker image,
+  frontend Docker image, transcription, payment-ledger matching, review
+  workflow, dashboard, and exports.
 
 ## Delivery Workflow
 
@@ -38,6 +39,7 @@ The owning files are:
 - [TESTING.md](TESTING.md) owns test scope by milestone.
 - [PLAN.md](PLAN.md) owns sequence, review gates, and phase boundaries.
 - [milestone-1-base-api-development/](milestone-1-base-api-development/) owns the detailed Milestone 1 phase plans.
+- [milestone-2-base-frontend-development/](milestone-2-base-frontend-development/) owns the detailed Milestone 2 phase plans.
 
 ## Milestone Map
 
@@ -45,7 +47,7 @@ The owning files are:
 | --- | --- | --- |
 | 0 | Current Foundation | Keep local backend setup small and understandable. |
 | 1 | Base API Development | Accept LLM-shaped extraction input, persist a case, and return deterministic reconciliation results. |
-| 2 | Base Frontend Development | Display and submit the stable Base API contract after the backend is useful. |
+| 2 | Base Frontend Development | View stored Base API data before adding the create flow. |
 | 3 | LLM Integration | Replace mocked extraction input with a real local LLM adapter that emits the same schema. |
 | 4 | Vertical Expansion | Add auth, tenant context, payments, review workflow, workers, dashboard, and exports in reviewed slices. |
 
@@ -88,19 +90,20 @@ uv run mypy app
 uv run ruff check .
 ```
 
-There is no frontend command yet. The frontend folder only documents that the
-frontend setup is intentionally deferred.
+Frontend commands are introduced by Milestone 2. Until M2.1 is implemented,
+treat the frontend as planning-only in committed project history.
 
 ## Recommended Reading Order
 
 1. [README.md](README.md) - where to start and what is implemented now.
 2. [PLAN.md](PLAN.md) - milestone sequence and review gates.
 3. [milestone-1-base-api-development/](milestone-1-base-api-development/) - detailed Milestone 1 phase plans.
-4. [API.md](API.md) - Base API contract and target endpoint contracts.
-5. [MODELS.md](MODELS.md) - Base persistence shape and target data model.
-6. [DEFINITIONS.md](DEFINITIONS.md) - function and service contracts.
-7. [TESTING.md](TESTING.md) - how much testing each milestone should carry.
-8. Product and design references as needed: [PRD.md](PRD.md),
+4. [milestone-2-base-frontend-development/](milestone-2-base-frontend-development/) - detailed Milestone 2 phase plans.
+5. [API.md](API.md) - Base API contract and target endpoint contracts.
+6. [MODELS.md](MODELS.md) - Base persistence shape and target data model.
+7. [DEFINITIONS.md](DEFINITIONS.md) - function and service contracts.
+8. [TESTING.md](TESTING.md) - how much testing each milestone should carry.
+9. Product and design references as needed: [PRD.md](PRD.md),
    [BDD.md](BDD.md), [ARCH.md](ARCH.md), [SPEC.md](SPEC.md),
    [CONFIG.md](CONFIG.md), and [UI_UX.md](UI_UX.md).
 
@@ -114,8 +117,9 @@ frontend setup is intentionally deferred.
 | [SPEC.md](SPEC.md) | Technical design | Target design, not fully implemented |
 | [PLAN.md](PLAN.md) | Milestone sequence and review gates | Milestone sequence and review gates |
 | [milestone-1-base-api-development/](milestone-1-base-api-development/) | Milestone 1 phase plans | Implemented phase history for M1 |
+| [milestone-2-base-frontend-development/](milestone-2-base-frontend-development/) | Milestone 2 phase plans | Planned frontend phases |
 | [CONFIG.md](CONFIG.md) | Runtime settings and feature flags | Split into current and deferred |
-| [TESTING.md](TESTING.md) | Test strategy by phase maturity | Milestone 1 backend tests implemented |
+| [TESTING.md](TESTING.md) | Test strategy by phase maturity | Milestone 1 implemented; Milestone 2 planned |
 | [API.md](API.md) | Base API and target endpoint contracts | Base API implemented; target contracts documented |
 | [MODELS.md](MODELS.md) | Base persistence shape and target model | Base persistence model implemented; target model documented |
 | [DEFINITIONS.md](DEFINITIONS.md) | Planned interfaces | Base interfaces implemented; target interfaces documented |
@@ -127,8 +131,8 @@ frontend setup is intentionally deferred.
 - Use milestone folders for detailed phase plans.
 - Use `PLAN.md` for milestone sequencing and review gates only.
 - Use `PHASE-M{N}.{X}-*.md` files inside milestone folders for one phase at a time.
-- Add frontend setup only in its own later phase, after the backend has useful
-  API behavior.
+- Add frontend behavior only through the Milestone 2 phase plans, starting with
+  scaffold cleanup before data screens.
 - Do not move Redis, Ollama, workers, or Dockerized apps into an early phase
   just because the final product will need them.
 - Every phase should end with a small set of commands the developer can run.
